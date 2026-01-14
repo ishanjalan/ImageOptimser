@@ -62,7 +62,7 @@
 </script>
 
 <div
-	class="glass group relative overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-lg"
+	class="glass group relative rounded-2xl transition-all duration-300 hover:shadow-lg"
 	in:scale={{ duration: 200, start: 0.95 }}
 	out:fade={{ duration: 150 }}
 >
@@ -163,7 +163,7 @@
 					
 					{#if showFormatMenu}
 						<div
-							class="absolute left-0 top-full z-20 mt-1 min-w-[100px] overflow-hidden rounded-lg bg-white shadow-xl dark:bg-surface-800"
+							class="absolute left-0 bottom-full z-50 mb-1 min-w-[120px] overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-800 dark:ring-white/10"
 							in:scale={{ duration: 150, start: 0.95 }}
 							out:fade={{ duration: 100 }}
 						>
