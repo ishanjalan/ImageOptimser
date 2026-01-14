@@ -1,43 +1,62 @@
-# Squish - Image Optimizer
+# Squishan
 
-A modern, privacy-first image optimizer that runs entirely in your browser. Compress JPEG, PNG, WebP, AVIF, GIF, and SVG files with zero server uploads.
+A blazing-fast, privacy-first image optimizer that runs entirely in your browser. Compress and convert images with professional-grade codecs — no uploads, no servers, no compromises.
 
-![Squish Screenshot](screenshot.png)
+![Squishan Screenshot](screenshot.png)
 
-## Features
+## ✨ Features
 
-- **100% Client-Side** - All processing happens in your browser. Your images never leave your device.
-- **Multiple Formats** - Supports JPEG, PNG, WebP, AVIF, GIF, and SVG
-- **Format Conversion** - Convert between formats (e.g., PNG → WebP)
-- **Batch Processing** - Optimize multiple images at once
-- **Quality Control** - Adjustable compression quality
-- **Drag & Drop** - Simple drag and drop interface
-- **Download All** - Download all optimized images as a ZIP file
-- **Dark/Light Mode** - Beautiful UI with theme toggle
-- **Keyboard Shortcuts** - `Cmd/Ctrl + Shift + D` to download all, `Escape` to clear
+### 🔒 100% Private
+Your images **never leave your device**. All compression happens locally using WebAssembly — no server uploads, no data collection, complete privacy.
 
-## Tech Stack
+### ⚡ Professional Codecs
+Powered by the same algorithms used by Google and Mozilla:
+- **MozJPEG** — Superior JPEG compression
+- **OxiPNG** — Optimized PNG with maximum compression
+- **WebP** — Modern format with excellent quality/size ratio
+- **AVIF** — Next-gen format with best-in-class compression
+- **SVGO** — SVG optimization and minification
 
-- **SvelteKit 2** - Full-stack Svelte framework
-- **Svelte 5** - Latest Svelte with runes (`$state`, `$derived`, `$effect`)
-- **TypeScript** - Type-safe development
-- **Tailwind CSS v4** - Utility-first styling with Lightning CSS
-- **Vite** - Lightning fast build tool
-- **Lucide Icons** - Beautiful, consistent icons
+### 🎯 Smart Defaults
+- **Quality Presets** — Tiny (50%), Web (75%), Social (85%), High (92%), Max (98%)
+- **Format Conversion** — Convert between JPEG, PNG, WebP, and AVIF
+- **Lossless Mode** — Preserve perfect quality when needed
+- **Strip EXIF** — Remove metadata for smaller files and privacy
 
-## Getting Started
+### 🚀 Batch Processing
+- Process hundreds of images simultaneously
+- Multi-threaded worker pool scales to your CPU
+- Download all optimized images as a single ZIP
+
+### 🎨 Beautiful Experience
+- Side-by-side before/after comparison slider
+- Real-time compression progress
+- Dark and light themes
+- Responsive design for all screen sizes
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | [SvelteKit 2](https://kit.svelte.dev/) + [Svelte 5](https://svelte.dev/) |
+| Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
+| Compression | [@jsquash/*](https://github.com/nicferrier/jsquash) (WASM codecs) |
+| SVG | [SVGO](https://github.com/svg/svgo) |
+| Icons | [Lucide](https://lucide.dev/) |
+| Language | TypeScript |
+
+## 🚀 Getting Started
 
 ### Prerequisites
-
 - Node.js 18+
-- npm or pnpm
+- npm, pnpm, or yarn
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/image-optimizer.git
-cd image-optimizer
+git clone https://github.com/ishanjalan/ImageOptimser.git
+cd ImageOptimser
 
 # Install dependencies
 npm install
@@ -46,32 +65,97 @@ npm install
 npm run dev
 ```
 
-The app will be available at `http://localhost:5173`
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### Building for Production
+### Production Build
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## How It Works
+## 📖 Usage
 
-1. **Drop or select images** - Drag and drop images onto the drop zone or click to browse
-2. **Configure settings** - Adjust quality and output format
-3. **Automatic compression** - Images are processed instantly using the Canvas API
-4. **Download results** - Download individual files or all at once as a ZIP
+1. **Drop images** — Drag and drop files onto the drop zone, click to browse, or paste from clipboard
+2. **Configure** — Choose quality preset, output format, and lossless mode
+3. **Download** — Get individual files or download all as ZIP
 
-## Compression Technology
+### Keyboard Shortcuts
 
-- **JPEG/PNG/WebP/AVIF** - Uses the browser's native Canvas API for efficient compression
-- **SVG** - Basic optimization (comment removal, whitespace cleanup)
-- **GIF** - Pass-through (maintains original)
+| Shortcut | Action |
+|----------|--------|
+| `Cmd/Ctrl + Shift + D` | Download all as ZIP |
+| `Cmd/Ctrl + V` | Paste image from clipboard |
+| `Escape` | Clear all images |
 
-## License
+## 🔧 How It Works
 
-MIT License - feel free to use this project for personal or commercial purposes.
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Your Image │ ──▶ │ WASM Codecs  │ ──▶ │  Optimized  │
+│   (local)   │     │ (in browser) │     │   (local)   │
+└─────────────┘     └──────────────┘     └─────────────┘
+         ▲                                      │
+         └──────────────────────────────────────┘
+                    Never leaves your device
+```
 
-## Acknowledgments
+1. **Decoding** — Image is decoded using format-specific WASM decoder
+2. **Processing** — Raw pixel data is re-encoded with optimized settings
+3. **Delivery** — Compressed file is created entirely in your browser
 
-Built with inspiration from [Google's Squoosh](https://squoosh.app/) and [antonreshetov/image-optimizer](https://github.com/antonreshetov/image-optimizer).
+### Worker Pool Architecture
+
+Squishan automatically detects your CPU cores and creates an optimal number of Web Workers for parallel processing. This means:
+- 4-core CPU → 2 parallel compressions
+- 8-core CPU → 4 parallel compressions
+- Batch of 20 images completes 4x faster than sequential
+
+## 📊 Compression Comparison
+
+| Format | Best For | Typical Savings |
+|--------|----------|-----------------|
+| JPEG | Photos, gradients | 60-80% |
+| PNG | Screenshots, graphics with transparency | 20-50% |
+| WebP | Universal web use | 70-85% |
+| AVIF | Maximum compression | 80-90% |
+| SVG | Vector graphics, icons | 30-60% |
+
+## 🌟 Why Squishan?
+
+| Feature | Squishan | Squoosh | TinyPNG |
+|---------|----------|---------|---------|
+| 100% Client-side | ✅ | ✅ | ❌ |
+| Batch Processing | ✅ | ❌ | Limited |
+| ZIP Download | ✅ | ❌ | ✅ |
+| Format Conversion | ✅ | ✅ | ❌ |
+| AVIF Support | ✅ | ✅ | ❌ |
+| Open Source | ✅ | ✅ | ❌ |
+| No Upload Limits | ✅ | ✅ | ❌ |
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Google Squoosh](https://squoosh.app/) — Inspiration for browser-based compression
+- [jSquash](https://github.com/nicferrier/jsquash) — WASM codec implementations
+- [MozJPEG](https://github.com/mozilla/mozjpeg) — Mozilla's optimized JPEG encoder
+- [OxiPNG](https://github.com/shssoichiro/oxipng) — Rust-based PNG optimizer
+
+---
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/ishanjalan">Ishan Jalan</a>
+</p>

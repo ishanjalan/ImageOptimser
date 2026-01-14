@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#09090b"/>
+      <stop offset="100%" style="stop-color:#18181b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="100" cy="100" r="200" fill="#10b981" opacity="0.1"/>
+  <circle cx="1100" cy="530" r="150" fill="#06b6d4" opacity="0.1"/>
+  
+  <!-- Logo icon -->
+  <g transform="translate(100, 215)">
+    <rect width="200" height="200" rx="40" fill="url(#accent)"/>
+    <path d="M100 50L140 90L100 130L60 90L100 50Z" fill="white" opacity="0.9"/>
+    <path d="M100 130L140 170L100 210L60 170L100 130Z" fill="white" opacity="0.7"/>
+    <path d="M50 100L90 140L50 180" stroke="white" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M150 100L110 140L150 180" stroke="white" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="350" y="290" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="700" fill="white">
+    Squishan
+  </text>
+  <text x="350" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="#a1a1aa">
+    Free Image Optimizer
+  </text>
+  <text x="350" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#71717a">
+    JPEG • PNG • WebP • AVIF • SVG
+  </text>
+  
+  <!-- Tagline -->
+  <text x="350" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#52525b">
+    100% private — runs entirely in your browser
+  </text>
+</svg>

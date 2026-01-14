@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X } from 'lucide-svelte';
 	import { scale, fade } from 'svelte/transition';
+	import { focusTrap } from '$lib/utils/focus-trap';
 
 	let {
 		originalUrl,
@@ -15,6 +16,7 @@
 	let sliderPosition = $state(50);
 	let isDragging = $state(false);
 	let containerRef: HTMLDivElement;
+	let dialogRef: HTMLDivElement;
 
 	function getPositionFromEvent(clientX: number): number {
 		if (!containerRef) return sliderPosition;
@@ -66,6 +68,8 @@
 
 <!-- Backdrop -->
 <div
+	bind:this={dialogRef}
+	use:focusTrap
 	class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
 	onclick={handleBackdropClick}
 	transition:fade={{ duration: 150 }}

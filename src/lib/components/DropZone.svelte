@@ -1,12 +1,23 @@
 <script lang="ts">
-	import { Upload, ImageIcon, FileImage, Image, FileType, Film } from 'lucide-svelte';
+	import { Upload, FileImage, AlertCircle } from 'lucide-svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { processImages } from '$lib/utils/compress';
+	import { fade } from 'svelte/transition';
 
 	let isDragging = $state(false);
 	let fileInput: HTMLInputElement;
+	let errorMessage = $state<string | null>(null);
+	let errorTimeout: ReturnType<typeof setTimeout>;
 
 	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.svg';
+	const validTypes = [
+		'image/jpeg',
+		'image/jpg',
+		'image/png',
+		'image/webp',
+		'image/avif',
+		'image/svg+xml'
+	];
 	const hasImages = $derived(images.items.length > 0);
 
 	const formats = [
@@ -16,6 +27,14 @@
 		{ name: 'AVIF', color: 'from-purple-500 to-pink-500' },
 		{ name: 'SVG', color: 'from-cyan-500 to-blue-500' }
 	];
+
+	function showError(message: string) {
+		errorMessage = message;
+		clearTimeout(errorTimeout);
+		errorTimeout = setTimeout(() => {
+			errorMessage = null;
+		}, 4000);
+	}
 
 	function handleDragEnter(e: DragEvent) {
 		e.preventDefault();
@@ -36,16 +55,31 @@
 		e.preventDefault();
 	}
 
+	async function processFiles(files: FileList | File[]) {
+		const fileArray = Array.from(files);
+		const validFiles = fileArray.filter(f => validTypes.includes(f.type));
+		const skippedCount = fileArray.length - validFiles.length;
+
+		if (skippedCount > 0) {
+			const plural = skippedCount === 1 ? 'file was' : 'files were';
+			showError(`${skippedCount} ${plural} skipped (unsupported format)`);
+		}
+
+		if (validFiles.length > 0) {
+			const newItems = await images.addFiles(validFiles);
+			if (newItems.length > 0) {
+				await processImages(newItems.map((i) => i.id));
+			}
+		}
+	}
+
 	async function handleDrop(e: DragEvent) {
 		e.preventDefault();
 		isDragging = false;
 
 		const files = e.dataTransfer?.files;
 		if (files && files.length > 0) {
-			const newItems = await images.addFiles(files);
-			if (newItems.length > 0) {
-				await processImages(newItems.map((i) => i.id));
-			}
+			await processFiles(files);
 		}
 	}
 
@@ -53,10 +87,7 @@
 		const input = e.target as HTMLInputElement;
 		const files = input.files;
 		if (files && files.length > 0) {
-			const newItems = await images.addFiles(files);
-			if (newItems.length > 0) {
-				await processImages(newItems.map((i) => i.id));
-			}
+			await processFiles(files);
 		}
 		input.value = '';
 	}
@@ -70,6 +101,7 @@
 	class="relative"
 	role="button"
 	tabindex="0"
+	aria-label="Drop zone for image files"
 	ondragenter={handleDragEnter}
 	ondragleave={handleDragLeave}
 	ondragover={handleDragOver}
@@ -84,6 +116,7 @@
 		multiple
 		class="hidden"
 		onchange={handleFileSelect}
+		aria-hidden="true"
 	/>
 
 	{#if hasImages}
@@ -162,6 +195,18 @@
 					Max file size: Unlimited • Batch upload supported • Paste from clipboard
 				</p>
 			</div>
+		</div>
+	{/if}
+
+	<!-- Error message -->
+	{#if errorMessage}
+		<div
+			class="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-2 text-sm text-red-500"
+			transition:fade={{ duration: 150 }}
+			role="alert"
+		>
+			<AlertCircle class="h-4 w-4 flex-shrink-0" />
+			{errorMessage}
 		</div>
 	{/if}
 </div>

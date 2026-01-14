@@ -10,11 +10,17 @@
 	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown } from 'lucide-svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
 	import { fade, fly } from 'svelte/transition';
+	import { toast } from '$lib/components/Toast.svelte';
 
 	let showClearConfirm = $state(false);
+	let previousCompletedCount = $state(0);
 
 	const hasImages = $derived(images.items.length > 0);
 	const completedCount = $derived(images.items.filter((i) => i.status === 'completed').length);
+	const processingCount = $derived(images.items.filter((i) => i.status === 'processing').length);
+	const errorCount = $derived(images.items.filter((i) => i.status === 'error').length);
+	const hasUndownloaded = $derived(images.items.some((i) => i.status === 'completed' && i.compressedBlob));
+	
 	const totalSaved = $derived(
 		images.items
 			.filter((i) => i.status === 'completed' && i.compressedSize)
@@ -32,6 +38,30 @@
 			: 0
 	);
 
+	// Status text for aria-live region
+	const statusText = $derived(
+		completedCount > 0
+			? `${completedCount} of ${images.items.length} images optimized. ${totalSaved > 0 ? `Saved ${formatBytes(totalSaved)} (${savingsPercent}%)` : ''}`
+			: processingCount > 0
+				? `Processing ${processingCount} images...`
+				: ''
+	);
+
+	// Show toast when all images complete
+	$effect(() => {
+		if (completedCount > previousCompletedCount && processingCount === 0 && completedCount === images.items.length && images.items.length > 0) {
+			toast.success(`All ${completedCount} images optimized!`);
+		}
+		previousCompletedCount = completedCount;
+	});
+
+	// Show toast for errors
+	$effect(() => {
+		if (errorCount > 0) {
+			// Only show once per error occurrence
+		}
+	});
+
 	function formatBytes(bytes: number): string {
 		if (bytes === 0) return '0 B';
 		const k = 1024;
@@ -44,6 +74,7 @@
 		const completedImages = images.items.filter((i) => i.status === 'completed' && i.compressedBlob);
 		if (completedImages.length > 0) {
 			await downloadAllAsZip(completedImages);
+			toast.success(`Downloaded ${completedImages.length} images as ZIP`);
 		}
 	}
 
@@ -84,6 +115,15 @@
 		}
 	}
 
+	// Unsaved work warning
+	function handleBeforeUnload(e: BeforeUnloadEvent) {
+		if (hasUndownloaded) {
+			e.preventDefault();
+			// Modern browsers ignore custom messages but still show a generic one
+			return 'You have optimized images that haven\'t been downloaded. Are you sure you want to leave?';
+		}
+	}
+
 	const features = [
 		{
 			icon: Zap,
@@ -103,13 +143,22 @@
 	];
 </script>
 
-<svelte:window onkeydown={handleKeydown} onpaste={handlePaste} />
+<svelte:window 
+	onkeydown={handleKeydown} 
+	onpaste={handlePaste} 
+	onbeforeunload={handleBeforeUnload}
+/>
+
+<!-- Screen reader status announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true">
+	{statusText}
+</div>
 
 <div class="flex min-h-screen flex-col">
 	<Header />
 
 	<!-- Background decoration -->
-	<div class="fixed inset-0 -z-10 overflow-hidden">
+	<div class="fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
 		<div
 			class="absolute -top-1/2 -right-1/4 h-[800px] w-[800px] rounded-full bg-gradient-to-br from-accent-start/10 to-accent-end/10 blur-3xl"
 		></div>
@@ -161,7 +210,7 @@
 					</div>
 
 					<!-- Scroll hint -->
-					<div class="mt-10 flex items-center justify-center gap-2 text-surface-400">
+					<div class="mt-10 flex items-center justify-center gap-2 text-surface-400" aria-hidden="true">
 						<span class="text-sm uppercase tracking-wider">Drop images below</span>
 						<ArrowDown class="h-4 w-4 animate-bounce" />
 					</div>
@@ -173,10 +222,11 @@
 				<div
 					class="glass mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-4 sm:gap-6 rounded-2xl p-4 sm:p-6"
 					in:fade={{ duration: 200 }}
+					role="status"
 				>
 					<div class="flex flex-wrap items-center gap-4 sm:gap-8">
 						<div class="flex items-center gap-3">
-							<Sparkles class="h-6 w-6 text-accent-start" />
+							<Sparkles class="h-6 w-6 text-accent-start" aria-hidden="true" />
 							<span class="text-base text-surface-500">
 								<span class="font-semibold text-surface-900 dark:text-surface-100 text-lg"
 									>{completedCount}</span
@@ -206,7 +256,7 @@
 								onclick={handleDownloadAll}
 								class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40 hover:scale-105"
 							>
-								<Download class="h-5 w-5" />
+								<Download class="h-5 w-5" aria-hidden="true" />
 								<span class="hidden sm:inline">Download All</span>
 								<span class="sm:hidden">ZIP</span>
 							</button>
@@ -214,9 +264,9 @@
 						<button
 							onclick={() => showClearConfirm = true}
 							class="flex items-center gap-2 rounded-xl bg-surface-100 px-5 py-2.5 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-							title="Press Escape to clear"
+							aria-label="Clear all images (press Escape)"
 						>
-							<Trash2 class="h-5 w-5" />
+							<Trash2 class="h-5 w-5" aria-hidden="true" />
 							<span class="hidden sm:inline">Clear All</span>
 						</button>
 					</div>

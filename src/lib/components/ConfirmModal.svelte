@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { AlertTriangle, X } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
+	import { focusTrap } from '$lib/utils/focus-trap';
 
 	let {
 		open = false,
@@ -52,7 +53,9 @@
 		class="fixed inset-0 z-50 flex items-center justify-center p-4"
 		role="dialog"
 		aria-modal="true"
+		aria-labelledby="modal-title"
 		onkeydown={handleKeydown}
+		use:focusTrap
 	>
 		<!-- Backdrop -->
 		<button
@@ -84,7 +87,7 @@
 			</div>
 
 			<!-- Content -->
-			<h3 class="mb-2 text-center text-lg font-semibold text-surface-900 dark:text-surface-100">
+			<h3 id="modal-title" class="mb-2 text-center text-lg font-semibold text-surface-900 dark:text-surface-100">
 				{title}
 			</h3>
 			<p class="mb-6 text-center text-sm text-surface-500">
