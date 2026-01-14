@@ -44,18 +44,18 @@
 	const currentPreset = $derived(presets.find(p => p.value === images.settings.quality));
 </script>
 
-<div class="glass mb-4 rounded-xl px-4 py-3">
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-3">
+<div class="glass mb-6 sm:mb-8 rounded-2xl p-4 sm:p-6">
+	<div class="flex flex-wrap items-center gap-x-6 gap-y-4 lg:gap-x-8">
 		<!-- Quality Presets -->
-		<div class="flex items-center gap-2">
-			<span class="text-xs font-medium text-surface-500 uppercase tracking-wide">Quality</span>
-			<div class="flex gap-1">
+		<div class="flex items-center gap-3">
+			<span class="text-sm font-medium text-surface-400 uppercase tracking-wide">Quality</span>
+			<div class="flex gap-1.5">
 				{#each presets as preset}
 					<button
 						onclick={() => handlePresetClick(preset.value)}
-						class="px-2 py-1 text-xs font-medium rounded-md transition-all {images.settings.quality === preset.value
-							? 'bg-accent-start text-white'
-							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700'}"
+						class="px-3 py-1.5 text-sm font-medium rounded-lg transition-all {images.settings.quality === preset.value
+							? 'bg-accent-start text-white shadow-md shadow-accent-start/30'
+							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
 						title="{preset.desc} ({preset.value}%)"
 					>
 						{preset.label}
@@ -63,23 +63,23 @@
 				{/each}
 			</div>
 			{#if currentPreset}
-				<span class="text-[10px] text-surface-500">{currentPreset.value}%</span>
+				<span class="text-xs text-surface-500 tabular-nums">{currentPreset.value}%</span>
 			{/if}
 		</div>
 
 		<!-- Divider -->
-		<div class="hidden sm:block w-px h-5 bg-surface-700"></div>
+		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
 
 		<!-- Output Format -->
-		<div class="flex items-center gap-2">
-			<Settings2 class="h-3.5 w-3.5 text-surface-500" />
-			<div class="flex gap-1">
+		<div class="flex items-center gap-3">
+			<Settings2 class="h-4 w-4 text-surface-400" />
+			<div class="flex gap-1.5">
 				{#each formats as format}
 					<button
 						onclick={() => handleFormatChange(format.value)}
-						class="px-2 py-1 text-xs font-medium rounded-md transition-all {images.settings.outputFormat === format.value
-							? 'bg-accent-start text-white'
-							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700'}"
+						class="px-3 py-1.5 text-sm font-medium rounded-lg transition-all {images.settings.outputFormat === format.value
+							? 'bg-accent-start text-white shadow-md shadow-accent-start/30'
+							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
 					>
 						{format.label}
 					</button>
@@ -88,34 +88,37 @@
 		</div>
 
 		<!-- Divider -->
-		<div class="hidden sm:block w-px h-5 bg-surface-700"></div>
+		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
 
 		<!-- Strip Metadata Toggle -->
 		<button
 			onclick={handleMetadataToggle}
-			class="flex items-center gap-1.5 text-xs {images.settings.stripMetadata ? 'text-accent-start' : 'text-surface-400'}"
+			class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all {images.settings.stripMetadata ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 hover:bg-surface-700/50'}"
 			title={images.settings.stripMetadata ? 'EXIF data will be removed' : 'EXIF data will be preserved'}
 		>
-			<Shield class="h-3.5 w-3.5" />
+			<Shield class="h-4 w-4" />
+			<span class="text-sm font-medium">Strip EXIF</span>
 			<div
-				class="relative h-4 w-7 rounded-full transition-colors {images.settings.stripMetadata ? 'bg-accent-start' : 'bg-surface-600'}"
+				class="relative h-5 w-9 rounded-full transition-colors {images.settings.stripMetadata ? 'bg-accent-start' : 'bg-surface-600'}"
 			>
 				<span
-					class="absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform {images.settings.stripMetadata ? 'translate-x-3' : 'translate-x-0'}"
+					class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform {images.settings.stripMetadata ? 'translate-x-4' : 'translate-x-0'}"
 				></span>
 			</div>
 		</button>
 
+		<!-- Spacer -->
+		<div class="flex-1"></div>
+
 		<!-- Re-optimize Button -->
 		{#if hasCompletedImages}
-			<div class="hidden sm:block w-px h-5 bg-surface-700"></div>
 			<button
 				onclick={handleReoptimizeAll}
 				disabled={isReprocessing}
-				class="flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md bg-accent-start/10 text-accent-start hover:bg-accent-start/20 transition-all disabled:opacity-50"
+				class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-accent-start text-white shadow-md shadow-accent-start/30 hover:shadow-lg hover:shadow-accent-start/40 transition-all disabled:opacity-50"
 			>
-				<RefreshCw class="h-3 w-3 {isReprocessing ? 'animate-spin' : ''}" />
-				{isReprocessing ? 'Working...' : 'Re-optimize'}
+				<RefreshCw class="h-4 w-4 {isReprocessing ? 'animate-spin' : ''}" />
+				{isReprocessing ? 'Working...' : 'Re-optimize All'}
 			</button>
 		{/if}
 	</div>

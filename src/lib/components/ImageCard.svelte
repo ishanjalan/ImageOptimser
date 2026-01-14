@@ -66,23 +66,23 @@
 </script>
 
 <div
-	class="glass group relative rounded-xl transition-all duration-300 hover:shadow-lg"
+	class="glass group relative rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-black/10"
 	in:scale={{ duration: 200, start: 0.95 }}
 	out:fade={{ duration: 150 }}
 >
 	<!-- Remove button -->
 	<button
 		onclick={handleRemove}
-		class="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-surface-200 text-surface-500 opacity-0 shadow-md transition-all hover:bg-red-500 hover:text-white group-hover:opacity-100 dark:bg-surface-700"
+		class="absolute -top-2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-surface-200 text-surface-500 opacity-0 shadow-lg transition-all hover:bg-red-500 hover:text-white group-hover:opacity-100 dark:bg-surface-700"
 		aria-label="Remove image"
 	>
-		<X class="h-3.5 w-3.5" />
+		<X class="h-4 w-4" />
 	</button>
 
-	<!-- Thumbnail - larger, clickable -->
+	<!-- Thumbnail - clickable -->
 	<button
 		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : showPreview = true}
-		class="relative w-full h-28 overflow-hidden rounded-t-xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
+		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
 		aria-label="Compare or preview image"
 	>
 		<img
@@ -92,20 +92,20 @@
 		/>
 		{#if item.status === 'processing'}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-				<Loader2 class="h-8 w-8 text-white animate-spin" />
+				<Loader2 class="h-10 w-10 text-white animate-spin" />
 			</div>
 		{/if}
 		
 		<!-- Savings badge overlay -->
 		{#if item.status === 'completed'}
-			<div class="absolute top-2 right-2">
+			<div class="absolute top-3 right-3">
 				{#if isPositiveSavings}
-					<span class="flex items-center gap-1 rounded-full bg-green-500 px-2 py-1 text-xs font-bold text-white shadow-lg">
-						<Check class="h-3 w-3" />
+					<span class="flex items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-sm font-bold text-white shadow-lg">
+						<Check class="h-4 w-4" />
 						-{savings}%
 					</span>
 				{:else}
-					<span class="rounded-full bg-amber-500 px-2 py-1 text-xs font-bold text-white shadow-lg">
+					<span class="rounded-full bg-amber-500 px-3 py-1.5 text-sm font-bold text-white shadow-lg">
 						+{Math.abs(savings)}%
 					</span>
 				{/if}
@@ -114,14 +114,14 @@
 	</button>
 
 	<!-- Info section -->
-	<div class="p-2">
+	<div class="p-4">
 		<!-- Filename + Size -->
-		<div class="flex items-center justify-between gap-2 mb-2">
+		<div class="flex items-center justify-between gap-3 mb-3">
 			<p class="truncate text-sm font-medium text-surface-900 dark:text-surface-100" title={item.name}>
 				{item.name}
 			</p>
 			{#if item.status === 'completed' && item.compressedSize}
-				<span class="flex-shrink-0 text-xs font-mono text-accent-start font-semibold">
+				<span class="flex-shrink-0 text-sm font-mono text-accent-start font-semibold">
 					{formatBytes(item.compressedSize)}
 				</span>
 			{/if}
@@ -129,9 +129,9 @@
 
 		<!-- Status / Progress -->
 		{#if item.status === 'pending'}
-			<p class="text-xs text-surface-500">Waiting...</p>
+			<p class="text-sm text-surface-500">Waiting...</p>
 		{:else if item.status === 'processing'}
-			<div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
+			<div class="h-2 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
 				<div
 					class="h-full rounded-full bg-gradient-to-r from-accent-start to-accent-end transition-all duration-300"
 					style="width: {item.progress}%"
@@ -139,15 +139,15 @@
 			</div>
 		{:else if item.status === 'error'}
 			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-1.5 text-xs text-red-500">
-					<AlertCircle class="h-3.5 w-3.5" />
+				<div class="flex items-center gap-2 text-sm text-red-500">
+					<AlertCircle class="h-4 w-4" />
 					<span>Failed</span>
 				</div>
 				<button
 					onclick={handleRetry}
-					class="flex items-center gap-1 rounded-lg bg-red-100 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+					class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
 				>
-					<RotateCcw class="h-3 w-3" />
+					<RotateCcw class="h-4 w-4" />
 					Retry
 				</button>
 			</div>
@@ -155,25 +155,25 @@
 			<!-- Format + Actions row -->
 			<div class="flex items-center justify-between">
 				<!-- Format selector -->
-				<div class="flex items-center gap-1.5">
-					<span class="text-[10px] font-medium uppercase text-surface-400">
+				<div class="flex items-center gap-2">
+					<span class="text-xs font-medium uppercase text-surface-400">
 						{item.format}
 					</span>
-					<ArrowRight class="h-3 w-3 text-surface-300" />
+					<ArrowRight class="h-3.5 w-3.5 text-surface-400" />
 					{#if item.format === 'svg'}
 						<!-- SVG is locked - show static badge -->
-						<span class="rounded-md bg-gradient-to-r from-cyan-500 to-blue-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+						<span class="rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-2.5 py-1 text-xs font-bold uppercase text-white">
 							SVG
 						</span>
 					{:else}
-						<!-- Format dropdown for raster/GIF images -->
+						<!-- Format dropdown for raster images -->
 						<div class="relative">
 							<button
 								onclick={() => showFormatMenu = !showFormatMenu}
-								class="flex items-center gap-1 rounded-md bg-gradient-to-r {getCurrentFormatColor()} px-2 py-0.5 text-[10px] font-bold uppercase text-white transition-all hover:opacity-90"
+								class="flex items-center gap-1.5 rounded-lg bg-gradient-to-r {getCurrentFormatColor()} px-2.5 py-1 text-xs font-bold uppercase text-white transition-all hover:opacity-90"
 							>
 								{item.outputFormat}
-								<ChevronDown class="h-3 w-3" />
+								<ChevronDown class="h-3.5 w-3.5" />
 							</button>
 							
 							{#if showFormatMenu}
@@ -183,16 +183,16 @@
 									aria-label="Close menu"
 								></button>
 								<div
-									class="absolute left-0 bottom-full z-50 mb-1 min-w-[100px] overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
+									class="absolute left-0 bottom-full z-50 mb-2 min-w-[120px] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
 									in:scale={{ duration: 150, start: 0.95 }}
 									out:fade={{ duration: 100 }}
 								>
 									{#each outputOptions as format}
 										<button
 											onclick={() => handleFormatChange(format.value)}
-											class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
+											class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
 										>
-											<span class="h-2 w-2 rounded-full bg-gradient-to-r {format.color}"></span>
+											<span class="h-2.5 w-2.5 rounded-full bg-gradient-to-r {format.color}"></span>
 											<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
 										</button>
 									{/each}
@@ -203,21 +203,21 @@
 				</div>
 
 				<!-- Action buttons -->
-				<div class="flex items-center gap-1">
+				<div class="flex items-center gap-2">
 					<button
 						onclick={() => showCompare = true}
-						class="flex h-7 w-7 items-center justify-center rounded-lg text-surface-500 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+						class="flex h-9 w-9 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
 						aria-label="Compare"
 						title="Compare before/after"
 					>
-						<SplitSquareHorizontal class="h-4 w-4" />
+						<SplitSquareHorizontal class="h-5 w-5" />
 					</button>
 					<button
 						onclick={handleDownload}
-						class="flex h-7 items-center gap-1 rounded-lg bg-gradient-to-r from-accent-start to-accent-end px-2 text-xs font-medium text-white transition-all hover:opacity-90"
+						class="flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-accent-start to-accent-end px-3 text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-md"
 						aria-label="Download"
 					>
-						<Download class="h-3.5 w-3.5" />
+						<Download class="h-4 w-4" />
 					</button>
 				</div>
 			</div>

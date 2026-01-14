@@ -41,10 +41,10 @@
 	}
 </script>
 
-<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+<div class="mt-6 sm:mt-8 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 	{#each images.items as item (item.id)}
 		<div
-			class="relative {draggedId === item.id ? 'opacity-50' : ''} {dragOverId === item.id ? 'ring-2 ring-accent-start ring-offset-2 rounded-2xl' : ''}"
+			class="relative {draggedId === item.id ? 'opacity-50' : ''} {dragOverId === item.id ? 'ring-2 ring-accent-start ring-offset-2 ring-offset-surface-900 rounded-2xl' : ''}"
 			animate:flip={{ duration: 200 }}
 			draggable="true"
 			ondragstart={(e) => handleDragStart(e, item.id)}
@@ -64,7 +64,7 @@
 </div>
 
 {#if images.items.length > 1}
-	<p class="mt-4 text-center text-xs text-surface-400">
+	<p class="mt-6 text-center text-sm text-surface-400">
 		Drag cards to reorder • Order affects ZIP download
 	</p>
 {/if}

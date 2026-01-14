@@ -89,18 +89,18 @@
 	{#if hasImages}
 		<!-- Compact dropzone when images exist -->
 		<div
-			class="group flex items-center justify-center gap-3 rounded-xl border-2 border-dashed py-3 px-4 transition-all duration-300 cursor-pointer {isDragging
+			class="group flex items-center justify-center gap-4 rounded-2xl border-2 border-dashed py-4 sm:py-5 px-6 transition-all duration-300 cursor-pointer {isDragging
 				? 'border-accent-start bg-accent-start/5'
 				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700'}"
 		>
-			<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-100 dark:bg-surface-800 transition-colors group-hover:bg-accent-start/10">
+			<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-100 dark:bg-surface-800 transition-colors group-hover:bg-accent-start/10">
 				{#if isDragging}
-					<FileImage class="h-4 w-4 text-accent-start animate-pulse" />
+					<FileImage class="h-5 w-5 text-accent-start animate-pulse" />
 				{:else}
-					<Upload class="h-4 w-4 text-surface-400 group-hover:text-accent-start" />
+					<Upload class="h-5 w-5 text-surface-400 group-hover:text-accent-start" />
 				{/if}
 			</div>
-			<p class="text-sm text-surface-500">
+			<p class="text-base text-surface-500">
 				{#if isDragging}
 					<span class="font-medium text-accent-start">Release to add more</span>
 				{:else}
@@ -111,8 +111,8 @@
 	{:else}
 		<!-- Full dropzone when no images -->
 		<div
-			class="group relative overflow-hidden rounded-2xl border-2 border-dashed py-8 transition-all duration-300 cursor-pointer {isDragging
-				? 'border-accent-start bg-accent-start/5 scale-[1.02]'
+			class="group relative overflow-hidden rounded-2xl border-2 border-dashed py-12 sm:py-16 transition-all duration-300 cursor-pointer {isDragging
+				? 'border-accent-start bg-accent-start/5 scale-[1.01]'
 				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700 dark:hover:border-accent-start/50'}"
 		>
 			<!-- Background pattern -->
@@ -124,42 +124,42 @@
 			<div class="relative flex flex-col items-center justify-center px-6 text-center">
 				<!-- Icon -->
 				<div
-					class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 {isDragging
+					class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 {isDragging
 						? 'bg-accent-start/20 scale-110 rotate-3'
 						: 'bg-surface-100 group-hover:bg-accent-start/10 dark:bg-surface-800 group-hover:scale-105'}"
 				>
 					{#if isDragging}
-						<FileImage class="h-6 w-6 text-accent-start animate-pulse" />
+						<FileImage class="h-8 w-8 text-accent-start animate-pulse" />
 					{:else}
 						<Upload
-							class="h-6 w-6 text-surface-400 transition-all group-hover:text-accent-start group-hover:-translate-y-1"
+							class="h-8 w-8 text-surface-400 transition-all group-hover:text-accent-start group-hover:-translate-y-1"
 						/>
 					{/if}
 				</div>
 
 				<!-- Text -->
 				{#if isDragging}
-					<p class="font-semibold text-accent-start">Release to upload</p>
-					<p class="mt-0.5 text-sm text-accent-start/70">Your images are ready to be optimized</p>
+					<p class="text-xl font-semibold text-accent-start">Release to upload</p>
+					<p class="mt-2 text-base text-accent-start/70">Your images are ready to be optimized</p>
 				{:else}
-					<p class="font-semibold text-surface-700 dark:text-surface-300">Drop images here</p>
-					<p class="mt-0.5 text-sm text-surface-500">
+					<p class="text-xl font-semibold text-surface-700 dark:text-surface-300">Drop images here</p>
+					<p class="mt-2 text-base text-surface-500">
 						or <span class="font-medium text-accent-start underline-offset-2 hover:underline">click to browse</span>
 					</p>
 				{/if}
 
 				<!-- Supported formats -->
-				<div class="mt-4 flex flex-wrap items-center justify-center gap-1.5">
+				<div class="mt-6 flex flex-wrap items-center justify-center gap-2">
 					{#each formats as format}
 						<span
-							class="rounded bg-gradient-to-r {format.color} px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm transition-transform hover:scale-105"
+							class="rounded-lg bg-gradient-to-r {format.color} px-3 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
 						>
 							{format.name}
 						</span>
 					{/each}
 				</div>
-				<p class="mt-3 text-xs text-surface-400">
-					Max file size: Unlimited • Batch upload supported
+				<p class="mt-5 text-sm text-surface-400">
+					Max file size: Unlimited • Batch upload supported • Paste from clipboard
 				</p>
 			</div>
 		</div>

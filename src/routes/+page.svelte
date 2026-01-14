@@ -118,51 +118,52 @@
 		></div>
 	</div>
 
-	<main class="flex-1 px-6 pt-20 pb-6">
-		<div class="mx-auto max-w-6xl">
+	<main class="flex-1 px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-8 sm:pb-12">
+		<div class="mx-auto max-w-7xl">
 			<!-- Hero Section -->
 			{#if !hasImages}
-				<div class="mb-4 text-center" in:fade={{ duration: 300 }}>
-					<div class="mb-2 inline-flex items-center gap-2 rounded-full bg-accent-start/10 px-3 py-1 text-xs font-medium text-accent-start">
-						<Sparkles class="h-3 w-3" />
+				<div class="mb-8 sm:mb-12 text-center" in:fade={{ duration: 300 }}>
+					<div class="mb-4 inline-flex items-center gap-2 rounded-full bg-accent-start/10 px-4 py-1.5 text-sm font-medium text-accent-start">
+						<Sparkles class="h-4 w-4" />
 						Free & Open Source
 					</div>
-					<h1 class="mb-2 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+					<h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
 						<span class="gradient-text">Optimize</span> your images
+						<br class="hidden sm:block" />
 						<span class="text-surface-600 dark:text-surface-400">in seconds</span>
 					</h1>
-					<p class="mx-auto max-w-2xl text-sm text-surface-500 sm:text-base">
+					<p class="mx-auto max-w-2xl text-base sm:text-lg text-surface-500 leading-relaxed">
 						Compress JPEG, PNG, WebP, AVIF, and SVG with powerful algorithms.
 						<span class="font-medium text-surface-700 dark:text-surface-300">100% private</span>
 						— everything runs in your browser.
 					</p>
 
-					<!-- Feature Cards - Inline -->
-					<div class="mt-5 grid gap-3 sm:grid-cols-3">
+					<!-- Feature Cards -->
+					<div class="mt-10 sm:mt-12 grid gap-4 sm:gap-6 sm:grid-cols-3 max-w-4xl mx-auto">
 						{#each features as feature, i}
 							<div
-								class="glass group flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all hover:scale-[1.02]"
+								class="glass group flex items-center gap-4 rounded-2xl p-5 sm:p-6 text-left transition-all hover:scale-[1.02]"
 								in:fly={{ y: 20, delay: 100 * i, duration: 300 }}
 							>
 								<div
-									class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent-start/20 to-accent-end/20 text-accent-start"
+									class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent-start/20 to-accent-end/20 text-accent-start"
 								>
-									<feature.icon class="h-4 w-4" />
+									<feature.icon class="h-6 w-6" />
 								</div>
 								<div>
-									<h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
+									<h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">
 										{feature.title}
 									</h3>
-									<p class="text-xs text-surface-500">{feature.description}</p>
+									<p class="text-sm text-surface-500 mt-0.5">{feature.description}</p>
 								</div>
 							</div>
 						{/each}
 					</div>
 
 					<!-- Scroll hint -->
-					<div class="mt-4 flex items-center justify-center gap-2 text-surface-400">
-						<span class="text-xs uppercase tracking-wider">Drop images below</span>
-						<ArrowDown class="h-3 w-3 animate-bounce" />
+					<div class="mt-10 flex items-center justify-center gap-2 text-surface-400">
+						<span class="text-sm uppercase tracking-wider">Drop images below</span>
+						<ArrowDown class="h-4 w-4 animate-bounce" />
 					</div>
 				</div>
 			{/if}
@@ -170,54 +171,54 @@
 			<!-- Stats bar when there are images -->
 			{#if hasImages}
 				<div
-					class="glass mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4"
+					class="glass mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-4 sm:gap-6 rounded-2xl p-4 sm:p-6"
 					in:fade={{ duration: 200 }}
 				>
-					<div class="flex flex-wrap items-center gap-4 sm:gap-6">
-						<div class="flex items-center gap-2">
-							<Sparkles class="h-5 w-5 text-accent-start" />
-							<span class="text-sm text-surface-500">
-								<span class="font-semibold text-surface-900 dark:text-surface-100"
+					<div class="flex flex-wrap items-center gap-4 sm:gap-8">
+						<div class="flex items-center gap-3">
+							<Sparkles class="h-6 w-6 text-accent-start" />
+							<span class="text-base text-surface-500">
+								<span class="font-semibold text-surface-900 dark:text-surface-100 text-lg"
 									>{completedCount}</span
 								>
 								of {images.items.length} optimized
 							</span>
 						</div>
 						{#if totalSaved > 0}
-							<div class="flex items-center gap-3">
-								<div class="text-sm text-surface-500">
+							<div class="flex items-center gap-4">
+								<div class="text-base text-surface-500">
 									Saved:
-									<span class="font-mono font-semibold text-accent-start"
+									<span class="font-mono font-semibold text-accent-start text-lg"
 										>{formatBytes(totalSaved)}</span
 									>
 								</div>
 								<span
-									class="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-bold text-green-500"
+									class="rounded-full bg-green-500/10 px-3 py-1 text-sm font-bold text-green-500"
 								>
 									-{savingsPercent}%
 								</span>
 							</div>
 						{/if}
 					</div>
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-3">
 						{#if completedCount > 0}
 							<button
 								onclick={handleDownloadAll}
-								class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-4 py-2 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40 hover:scale-105"
+								class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40 hover:scale-105"
 							>
-								<Download class="h-4 w-4" />
+								<Download class="h-5 w-5" />
 								<span class="hidden sm:inline">Download All</span>
 								<span class="sm:hidden">ZIP</span>
 							</button>
 						{/if}
-					<button
-						onclick={() => showClearConfirm = true}
-						class="flex items-center gap-2 rounded-xl bg-surface-100 px-4 py-2 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-						title="Press Escape to clear"
-					>
-						<Trash2 class="h-4 w-4" />
-						<span class="hidden sm:inline">Clear All</span>
-					</button>
+						<button
+							onclick={() => showClearConfirm = true}
+							class="flex items-center gap-2 rounded-xl bg-surface-100 px-5 py-2.5 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+							title="Press Escape to clear"
+						>
+							<Trash2 class="h-5 w-5" />
+							<span class="hidden sm:inline">Clear All</span>
+						</button>
 					</div>
 				</div>
 			{/if}
