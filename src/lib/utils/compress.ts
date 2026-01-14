@@ -1,4 +1,5 @@
 import { images, type ImageFormat, type ImageItem } from '$lib/stores/images.svelte';
+import { optimize } from 'svgo';
 
 // Compression queue management
 let isProcessing = false;
@@ -119,18 +120,31 @@ async function compressWithCanvas(
 }
 
 async function optimizeSvg(file: File): Promise<Blob> {
-	// For SVG, we'll do basic optimization
-	// In a production app, you'd use SVGO here
 	const text = await file.text();
 
-	// Basic SVG optimization - remove comments, unnecessary whitespace
-	let optimized = text
-		.replace(/<!--[\s\S]*?-->/g, '') // Remove comments
-		.replace(/>\s+</g, '><') // Remove whitespace between tags
-		.replace(/\s{2,}/g, ' ') // Collapse multiple spaces
-		.trim();
+	// Use SVGO for proper SVG optimization
+	const result = optimize(text, {
+		multipass: true,
+		plugins: [
+			'preset-default',
+			'removeDimensions',
+			'removeXMLNS',
+			{
+				name: 'removeAttrs',
+				params: {
+					attrs: ['data-name', 'class']
+				}
+			},
+			{
+				name: 'sortAttrs',
+				params: {
+					xmlnsOrder: 'alphabetical'
+				}
+			}
+		]
+	});
 
-	return new Blob([optimized], { type: 'image/svg+xml' });
+	return new Blob([result.data], { type: 'image/svg+xml' });
 }
 
 function getMimeType(format: ImageFormat): string {
