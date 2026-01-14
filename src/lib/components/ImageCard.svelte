@@ -162,6 +162,12 @@
 					</button>
 					
 					{#if showFormatMenu}
+						<!-- Click outside to close -->
+						<button
+							class="fixed inset-0 z-40 cursor-default"
+							onclick={() => showFormatMenu = false}
+							aria-label="Close menu"
+						></button>
 						<div
 							class="absolute left-0 bottom-full z-50 mb-1 min-w-[120px] overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/5 dark:bg-surface-800 dark:ring-white/10"
 							in:scale={{ duration: 150, start: 0.95 }}
@@ -204,12 +210,3 @@
 		{/if}
 	</div>
 </div>
-
-<!-- Click outside to close menu -->
-{#if showFormatMenu}
-	<button
-		class="fixed inset-0 z-10"
-		onclick={() => showFormatMenu = false}
-		aria-label="Close menu"
-	></button>
-{/if}
