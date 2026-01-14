@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Heart, Github, Shield } from 'lucide-svelte';
+	import { Heart, Github, Shield, Video } from 'lucide-svelte';
 </script>
 
 <footer class="mt-auto border-t border-surface-200/50 py-6 dark:border-surface-800/50">
@@ -14,7 +14,17 @@
 				<span>Your images never leave your device</span>
 			</div>
 
-			<div class="flex items-center gap-4">
+			<div class="flex items-center gap-3">
+				<a
+					href="https://ishanjalan.github.io/Squash/"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500/10 to-red-500/10 px-3 py-1 text-sm font-medium text-orange-500 transition-all hover:from-orange-500/20 hover:to-red-500/20 dark:text-orange-400"
+				>
+					<Video class="h-3.5 w-3.5" />
+					<span>Squash</span>
+				</a>
+				<span class="text-surface-300 dark:text-surface-700">•</span>
 				<a
 					href="https://github.com/ishanjalan/ImageOptimser"
 					target="_blank"
