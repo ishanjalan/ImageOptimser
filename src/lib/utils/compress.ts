@@ -200,18 +200,10 @@ async function optimizeSvg(file: File): Promise<Blob> {
 		multipass: true,
 		plugins: [
 			'preset-default',
-			'removeDimensions',
-			'removeXMLNS',
 			{
 				name: 'removeAttrs',
 				params: {
-					attrs: ['data-name', 'class']
-				}
-			},
-			{
-				name: 'sortAttrs',
-				params: {
-					xmlnsOrder: 'alphabetical'
+					attrs: ['data-name']
 				}
 			}
 		]
