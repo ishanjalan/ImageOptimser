@@ -30,7 +30,7 @@
 					<Zap class="h-5 w-5 text-white" strokeWidth={2.5} />
 				</div>
 				<span class="text-xl font-semibold tracking-tight">
-					<span class="gradient-text">Squish</span>
+					<span class="gradient-text">Squishan</span>
 				</span>
 			</a>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Upload, ImageIcon, FileImage } from 'lucide-svelte';
+	import { Upload, ImageIcon, FileImage, Image, FileType, Film } from 'lucide-svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { processImages } from '$lib/utils/compress';
 
@@ -9,6 +9,15 @@
 	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.gif,.svg';
 	const hasImages = $derived(images.items.length > 0);
 
+	const formats = [
+		{ name: 'JPEG', color: 'from-orange-500 to-red-500' },
+		{ name: 'PNG', color: 'from-blue-500 to-indigo-500' },
+		{ name: 'WebP', color: 'from-green-500 to-emerald-500' },
+		{ name: 'AVIF', color: 'from-purple-500 to-pink-500' },
+		{ name: 'GIF', color: 'from-yellow-500 to-orange-500' },
+		{ name: 'SVG', color: 'from-cyan-500 to-blue-500' }
+	];
+
 	function handleDragEnter(e: DragEvent) {
 		e.preventDefault();
 		isDragging = true;
@@ -16,7 +25,6 @@
 
 	function handleDragLeave(e: DragEvent) {
 		e.preventDefault();
-		// Only set to false if we're leaving the drop zone entirely
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 		const x = e.clientX;
 		const y = e.clientY;
@@ -51,7 +59,6 @@
 				await processImages(newItems.map((i) => i.id));
 			}
 		}
-		// Reset input so the same file can be selected again
 		input.value = '';
 	}
 
@@ -81,45 +88,46 @@
 	/>
 
 	<div
-		class="group relative overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-300 {isDragging
+		class="group relative overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-300 cursor-pointer {isDragging
 			? 'border-accent-start bg-accent-start/5 scale-[1.02]'
-			: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700'} {hasImages
-			? 'py-8'
-			: 'py-16 md:py-24'}"
+			: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700 dark:hover:border-accent-start/50'} {hasImages
+			? 'py-6'
+			: 'py-12 md:py-16'}"
 	>
 		<!-- Background pattern -->
 		<div
-			class="absolute inset-0 opacity-5 dark:opacity-10"
+			class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
 			style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"
 		></div>
 
 		<div class="relative flex flex-col items-center justify-center px-6 text-center">
 			<!-- Icon -->
 			<div
-				class="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-all duration-300 {isDragging
-					? 'bg-accent-start/20 scale-110'
-					: 'bg-surface-100 group-hover:bg-accent-start/10 dark:bg-surface-800'}"
+				class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 {isDragging
+					? 'bg-accent-start/20 scale-110 rotate-3'
+					: 'bg-surface-100 group-hover:bg-accent-start/10 dark:bg-surface-800 group-hover:scale-105'}"
 			>
 				{#if isDragging}
-					<FileImage class="h-10 w-10 text-accent-start animate-pulse" />
+					<FileImage class="h-8 w-8 text-accent-start animate-pulse" />
 				{:else}
 					<Upload
-						class="h-10 w-10 text-surface-400 transition-all group-hover:text-accent-start group-hover:-translate-y-1"
+						class="h-8 w-8 text-surface-400 transition-all group-hover:text-accent-start group-hover:-translate-y-1"
 					/>
 				{/if}
 			</div>
 
 			<!-- Text -->
 			{#if isDragging}
-				<p class="text-xl font-semibold text-accent-start">Drop your images here</p>
+				<p class="text-lg font-semibold text-accent-start">Release to upload</p>
+				<p class="mt-1 text-sm text-accent-start/70">Your images are ready to be optimized</p>
 			{:else}
-				<p class="text-xl font-semibold text-surface-700 dark:text-surface-300">
+				<p class="text-lg font-semibold text-surface-700 dark:text-surface-300">
 					{hasImages ? 'Add more images' : 'Drop images here'}
 				</p>
-				<p class="mt-2 text-surface-500">
+				<p class="mt-1 text-sm text-surface-500">
 					or <span
-						class="font-medium text-accent-start underline-offset-2 hover:underline cursor-pointer"
-						>browse files</span
+						class="font-medium text-accent-start underline-offset-2 hover:underline"
+						>click to browse</span
 					>
 				</p>
 			{/if}
@@ -127,14 +135,17 @@
 			<!-- Supported formats -->
 			{#if !hasImages}
 				<div class="mt-6 flex flex-wrap items-center justify-center gap-2">
-					{#each ['JPEG', 'PNG', 'WebP', 'AVIF', 'GIF', 'SVG'] as format}
+					{#each formats as format}
 						<span
-							class="rounded-lg bg-surface-100 px-3 py-1.5 text-xs font-medium text-surface-600 dark:bg-surface-800 dark:text-surface-400"
+							class="rounded-lg bg-gradient-to-r {format.color} px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-105"
 						>
-							{format}
+							{format.name}
 						</span>
 					{/each}
 				</div>
+				<p class="mt-4 text-xs text-surface-400">
+					Max file size: Unlimited • Batch upload supported
+				</p>
 			{/if}
 		</div>
 	</div>

@@ -5,9 +5,9 @@
 	import ImageList from '$lib/components/ImageList.svelte';
 	import Settings from '$lib/components/Settings.svelte';
 	import { images } from '$lib/stores/images.svelte';
-	import { Download, Trash2, Sparkles } from 'lucide-svelte';
+	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, Command, ArrowDown } from 'lucide-svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 
 	const hasImages = $derived(images.items.length > 0);
 	const completedCount = $derived(images.items.filter((i) => i.status === 'completed').length);
@@ -15,6 +15,17 @@
 		images.items
 			.filter((i) => i.status === 'completed' && i.compressedSize)
 			.reduce((acc, i) => acc + (i.originalSize - (i.compressedSize || 0)), 0)
+	);
+	const savingsPercent = $derived(
+		images.items.length > 0
+			? Math.round(
+					(totalSaved /
+						images.items
+							.filter((i) => i.status === 'completed')
+							.reduce((acc, i) => acc + i.originalSize, 0)) *
+						100
+				) || 0
+			: 0
 	);
 
 	function formatBytes(bytes: number): string {
@@ -34,16 +45,32 @@
 
 	// Keyboard shortcuts
 	function handleKeydown(e: KeyboardEvent) {
-		// Cmd/Ctrl + Shift + D - Download all
 		if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'd') {
 			e.preventDefault();
 			handleDownloadAll();
 		}
-		// Escape - Clear all
 		if (e.key === 'Escape' && hasImages) {
 			images.clearAll();
 		}
 	}
+
+	const features = [
+		{
+			icon: Zap,
+			title: 'Lightning Fast',
+			description: 'WASM-powered codecs for instant compression'
+		},
+		{
+			icon: Shield,
+			title: '100% Private',
+			description: 'Files never leave your device'
+		},
+		{
+			icon: Gauge,
+			title: 'Pro Codecs',
+			description: 'MozJPEG, OxiPNG, WebP, AVIF & SVGO'
+		}
+	];
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -61,25 +88,51 @@
 		></div>
 	</div>
 
-	<main class="flex-1 px-6 pt-28 pb-8">
+	<main class="flex-1 px-6 pt-24 pb-8">
 		<div class="mx-auto max-w-6xl">
 			<!-- Hero Section -->
 			{#if !hasImages}
-				<div class="mb-12 text-center" in:fade={{ duration: 300 }}>
-					<h1
-						class="mb-4 text-5xl font-bold tracking-tight md:text-6xl lg:text-7xl"
-					>
+				<div class="mb-8 text-center" in:fade={{ duration: 300 }}>
+					<div class="mb-4 inline-flex items-center gap-2 rounded-full bg-accent-start/10 px-4 py-1.5 text-sm font-medium text-accent-start">
+						<Sparkles class="h-4 w-4" />
+						Free & Open Source
+					</div>
+					<h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
 						<span class="gradient-text">Optimize</span> your images
 						<br />
 						<span class="text-surface-600 dark:text-surface-400">in seconds</span>
 					</h1>
-					<p class="mx-auto max-w-2xl text-lg text-surface-500 md:text-xl">
-						Compress JPEG, PNG, WebP, AVIF, GIF, and SVG files with powerful algorithms.
-						<span class="font-medium text-surface-700 dark:text-surface-300"
-							>100% free, 100% private</span
-						>
+					<p class="mx-auto max-w-2xl text-base text-surface-500 sm:text-lg md:text-xl">
+						Compress JPEG, PNG, WebP, AVIF, GIF, and SVG with powerful algorithms.
+						<span class="font-medium text-surface-700 dark:text-surface-300">100% private</span>
 						— everything runs in your browser.
 					</p>
+
+					<!-- Feature Cards -->
+					<div class="mt-10 grid gap-4 sm:grid-cols-3">
+						{#each features as feature, i}
+							<div
+								class="glass group rounded-2xl p-5 text-left transition-all hover:scale-[1.02]"
+								in:fly={{ y: 20, delay: 100 * i, duration: 300 }}
+							>
+								<div
+									class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-start/20 to-accent-end/20 text-accent-start transition-transform group-hover:scale-110"
+								>
+									<feature.icon class="h-5 w-5" />
+								</div>
+								<h3 class="font-semibold text-surface-900 dark:text-surface-100">
+									{feature.title}
+								</h3>
+								<p class="mt-1 text-sm text-surface-500">{feature.description}</p>
+							</div>
+						{/each}
+					</div>
+
+					<!-- Scroll hint -->
+					<div class="mt-8 flex flex-col items-center gap-2 text-surface-400">
+						<span class="text-xs uppercase tracking-wider">Drop images below</span>
+						<ArrowDown class="h-4 w-4 animate-bounce" />
+					</div>
 				</div>
 			{/if}
 
@@ -89,7 +142,7 @@
 					class="glass mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-4"
 					in:fade={{ duration: 200 }}
 				>
-					<div class="flex items-center gap-6">
+					<div class="flex flex-wrap items-center gap-4 sm:gap-6">
 						<div class="flex items-center gap-2">
 							<Sparkles class="h-5 w-5 text-accent-start" />
 							<span class="text-sm text-surface-500">
@@ -100,11 +153,18 @@
 							</span>
 						</div>
 						{#if totalSaved > 0}
-							<div class="text-sm text-surface-500">
-								Total saved:
-								<span class="font-mono font-semibold text-accent-start"
-									>{formatBytes(totalSaved)}</span
+							<div class="flex items-center gap-3">
+								<div class="text-sm text-surface-500">
+									Saved:
+									<span class="font-mono font-semibold text-accent-start"
+										>{formatBytes(totalSaved)}</span
+									>
+								</div>
+								<span
+									class="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-bold text-green-500"
 								>
+									-{savingsPercent}%
+								</span>
 							</div>
 						{/if}
 					</div>
@@ -112,18 +172,20 @@
 						{#if completedCount > 0}
 							<button
 								onclick={handleDownloadAll}
-								class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-4 py-2 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40"
+								class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-4 py-2 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40 hover:scale-105"
 							>
 								<Download class="h-4 w-4" />
-								Download All
+								<span class="hidden sm:inline">Download All</span>
+								<span class="sm:hidden">ZIP</span>
 							</button>
 						{/if}
 						<button
 							onclick={() => images.clearAll()}
 							class="flex items-center gap-2 rounded-xl bg-surface-100 px-4 py-2 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+							title="Press Escape to clear"
 						>
 							<Trash2 class="h-4 w-4" />
-							Clear All
+							<span class="hidden sm:inline">Clear All</span>
 						</button>
 					</div>
 				</div>
@@ -141,21 +203,35 @@
 			{#if hasImages}
 				<ImageList />
 			{/if}
+
+			<!-- Keyboard Shortcuts Hint -->
+			{#if hasImages && completedCount > 0}
+				<div
+					class="mt-6 flex flex-wrap justify-center gap-4 text-xs text-surface-400"
+					in:fade={{ duration: 200, delay: 300 }}
+				>
+					<div class="flex items-center gap-1.5">
+						<kbd
+							class="flex h-5 items-center gap-0.5 rounded bg-surface-200 px-1.5 font-mono text-[10px] dark:bg-surface-800"
+						>
+							<Command class="h-3 w-3" />
+							<span>⇧</span>
+							<span>D</span>
+						</kbd>
+						<span>Download all</span>
+					</div>
+					<div class="flex items-center gap-1.5">
+						<kbd
+							class="flex h-5 items-center rounded bg-surface-200 px-1.5 font-mono text-[10px] dark:bg-surface-800"
+						>
+							Esc
+						</kbd>
+						<span>Clear all</span>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</main>
 
 	<Footer />
 </div>
-
-<style>
-	@keyframes fade {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-</style>

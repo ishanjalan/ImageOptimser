@@ -7,7 +7,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
-	<title>Squish - Image Optimizer</title>
+	<title>Squishan - Image Optimizer</title>
 </svelte:head>
 
 {@render children()}
