@@ -51,7 +51,7 @@ function saveSettings(settings: CompressionSettings) {
 
 function getDefaultSettings(): CompressionSettings {
 	return {
-		quality: 80,
+		quality: 75, // "Web" preset - optimal for web, Android, iOS
 		outputFormat: 'same',
 		stripMetadata: true
 	};
