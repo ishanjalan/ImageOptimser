@@ -20,9 +20,6 @@ export interface ImageItem {
 export interface CompressionSettings {
 	quality: number;
 	outputFormat: 'same' | ImageFormat;
-	maxWidth?: number;
-	maxHeight?: number;
-	resizeEnabled: boolean;
 	stripMetadata: boolean;
 }
 
@@ -56,9 +53,6 @@ function getDefaultSettings(): CompressionSettings {
 	return {
 		quality: 80,
 		outputFormat: 'same',
-		maxWidth: undefined,
-		maxHeight: undefined,
-		resizeEnabled: false,
 		stripMetadata: true
 	};
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { images, type ImageFormat } from '$lib/stores/images.svelte';
-	import { Settings2, Sliders, Maximize2, Shield, Zap } from 'lucide-svelte';
+	import { Settings2, Sliders, Shield, Zap } from 'lucide-svelte';
 
 	const formats: { value: 'same' | ImageFormat; label: string }[] = [
 		{ value: 'same', label: 'Keep Original' },
@@ -27,20 +27,6 @@
 
 	function handlePresetClick(value: number) {
 		images.updateSettings({ quality: value });
-	}
-
-	function handleResizeToggle() {
-		images.updateSettings({ resizeEnabled: !images.settings.resizeEnabled });
-	}
-
-	function handleMaxWidthChange(e: Event) {
-		const value = parseInt((e.target as HTMLInputElement).value) || undefined;
-		images.updateSettings({ maxWidth: value });
-	}
-
-	function handleMaxHeightChange(e: Event) {
-		const value = parseInt((e.target as HTMLInputElement).value) || undefined;
-		images.updateSettings({ maxHeight: value });
 	}
 
 	function handleMetadataToggle() {
@@ -127,63 +113,6 @@
 					</button>
 				{/each}
 			</div>
-		</div>
-
-		<!-- Resize Options -->
-		<div class="md:flex-1">
-			<div class="mb-3 flex items-center gap-2">
-				<Maximize2 class="h-4 w-4 text-surface-500" />
-				<span class="text-sm font-medium text-surface-700 dark:text-surface-300">
-					Resize
-				</span>
-				<button
-					onclick={handleResizeToggle}
-					class="ml-auto relative h-6 w-11 rounded-full transition-colors {images.settings.resizeEnabled
-						? 'bg-accent-start'
-						: 'bg-surface-300 dark:bg-surface-600'}"
-					role="switch"
-					aria-checked={images.settings.resizeEnabled}
-				>
-					<span
-						class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform {images.settings.resizeEnabled
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				</button>
-			</div>
-			{#if images.settings.resizeEnabled}
-				<div class="flex gap-2">
-					<div class="flex-1">
-						<label for="maxWidth" class="mb-1 block text-xs text-surface-500">Max Width</label>
-						<input
-							type="number"
-							id="maxWidth"
-							placeholder="e.g. 1920"
-							value={images.settings.maxWidth || ''}
-							oninput={handleMaxWidthChange}
-							class="w-full rounded-lg border-0 bg-surface-100 px-3 py-2 text-sm text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-accent-start dark:bg-surface-800 dark:text-surface-100"
-						/>
-					</div>
-					<div class="flex-1">
-						<label for="maxHeight" class="mb-1 block text-xs text-surface-500">Max Height</label>
-						<input
-							type="number"
-							id="maxHeight"
-							placeholder="e.g. 1080"
-							value={images.settings.maxHeight || ''}
-							oninput={handleMaxHeightChange}
-							class="w-full rounded-lg border-0 bg-surface-100 px-3 py-2 text-sm text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-accent-start dark:bg-surface-800 dark:text-surface-100"
-						/>
-					</div>
-				</div>
-				<p class="mt-2 text-xs text-surface-400">
-					Images larger than these dimensions will be scaled down proportionally
-				</p>
-			{:else}
-				<p class="text-xs text-surface-400">
-					Enable to limit maximum dimensions
-				</p>
-			{/if}
 		</div>
 
 		<!-- Metadata Toggle -->

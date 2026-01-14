@@ -250,3 +250,11 @@
 		onclose={() => showCompare = false}
 	/>
 {/if}
+
+<!-- Preview Modal -->
+{#if showPreview}
+	<PreviewModal
+		{item}
+		onclose={() => showPreview = false}
+	/>
+{/if}
