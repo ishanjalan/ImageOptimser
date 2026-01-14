@@ -1,8 +1,8 @@
-# Squishan
+# Squish
 
 A blazing-fast, privacy-first image optimizer that runs entirely in your browser. Compress and convert images with professional-grade codecs — no uploads, no servers, no compromises.
 
-![Squishan Screenshot](screenshot.png)
+![Squish Screenshot](screenshot.png)
 
 ## ✨ Features
 
@@ -31,7 +31,7 @@ Powered by the same algorithms used by Google and Mozilla:
 ### 🎨 Beautiful Experience
 - Side-by-side before/after comparison slider
 - Real-time compression progress
-- Dark and light themes
+- Dark theme optimized for focus
 - Responsive design for all screen sizes
 
 ## 🛠 Tech Stack
@@ -106,7 +106,7 @@ npm run preview
 
 ### Worker Pool Architecture
 
-Squishan automatically detects your CPU cores and creates an optimal number of Web Workers for parallel processing. This means:
+Squish automatically detects your CPU cores and creates an optimal number of Web Workers for parallel processing. This means:
 - 4-core CPU → 2 parallel compressions
 - 8-core CPU → 4 parallel compressions
 - Batch of 20 images completes 4x faster than sequential
@@ -121,9 +121,9 @@ Squishan automatically detects your CPU cores and creates an optimal number of W
 | AVIF | Maximum compression | 80-90% |
 | SVG | Vector graphics, icons | 30-60% |
 
-## 🌟 Why Squishan?
+## 🌟 Why Squish?
 
-| Feature | Squishan | Squoosh | TinyPNG |
+| Feature | Squish | Squoosh | TinyPNG |
 |---------|----------|---------|---------|
 | 100% Client-side | ✅ | ✅ | ❌ |
 | Batch Processing | ✅ | ❌ | Limited |

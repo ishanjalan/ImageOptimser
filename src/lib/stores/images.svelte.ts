@@ -26,7 +26,7 @@ export interface CompressionSettings {
 	lossless: boolean;
 }
 
-const SETTINGS_KEY = 'squishan-settings';
+const SETTINGS_KEY = 'squish-settings';
 
 function loadSettings(): CompressionSettings {
 	if (typeof localStorage === 'undefined') {

@@ -28,7 +28,7 @@
   
   <!-- Text -->
   <text x="350" y="290" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="700" fill="white">
-    Squishan
+    Squish
   </text>
   <text x="350" y="380" font-family="system-ui, -apple-system, sans-serif" font-size="36" fill="#a1a1aa">
     Free Image Optimizer

@@ -1,6 +1,6 @@
 {
-	"name": "Squishan - Image Optimizer",
-	"short_name": "Squishan",
+	"name": "Squish - Image Optimizer",
+	"short_name": "Squish",
 	"description": "Free online image optimizer - compress JPEG, PNG, WebP, AVIF, and SVG files instantly in your browser. 100% private.",
 	"start_url": "/ImageOptimser/",
 	"scope": "/ImageOptimser/",
