@@ -1,6 +1,7 @@
-import { images, type ImageFormat, type ImageItem } from '$lib/stores/images.svelte';
+import { images, type OutputFormat, type ImageItem } from '$lib/stores/images.svelte';
 import { optimize } from 'svgo';
 import { processImage as processImageInWorker, initPool } from './worker-pool';
+import heic2any from 'heic2any';
 
 // Processing state
 let isProcessing = false;
@@ -46,9 +47,38 @@ async function processQueue() {
 	}
 }
 
+// Convert HEIC to PNG using heic2any (libheif WASM decoder)
+async function convertHeicToPng(file: File): Promise<{ blob: Blob; width: number; height: number }> {
+	const result = await heic2any({
+		blob: file,
+		toType: 'image/png', // Lossless intermediate format
+		quality: 1
+	});
+
+	// heic2any can return single blob or array
+	const pngBlob = Array.isArray(result) ? result[0] : result;
+
+	// Get dimensions from the converted PNG
+	const dimensions = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+		const img = new Image();
+		const url = URL.createObjectURL(pngBlob);
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			resolve({ width: img.naturalWidth, height: img.naturalHeight });
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error('Failed to get HEIC dimensions'));
+		};
+		img.src = url;
+	});
+
+	return { blob: pngBlob, ...dimensions };
+}
+
 async function compressImage(item: ImageItem) {
 	try {
-		images.updateItem(item.id, { status: 'processing', progress: 10 });
+		images.updateItem(item.id, { status: 'processing', progress: 5 });
 
 		const quality = images.settings.quality;
 		const lossless = images.settings.lossless;
@@ -60,8 +90,39 @@ async function compressImage(item: ImageItem) {
 			// SVG optimization stays on main thread (SVGO is JS, not WASM)
 			compressedBlob = await optimizeSvg(item.file);
 			images.updateItem(item.id, { progress: 90 });
+		} else if (item.format === 'heic') {
+			// HEIC: Convert to PNG first, then process
+			images.updateItem(item.id, { progress: 10 });
+			
+			const { blob: pngBlob, width, height } = await convertHeicToPng(item.file);
+			
+			// Update dimensions if we didn't have them
+			if (!item.width || !item.height) {
+				images.updateItem(item.id, { width, height });
+			}
+			
+			images.updateItem(item.id, { progress: 30 });
+
+			// Now process the PNG through the worker
+			const imageBuffer = await pngBlob.arrayBuffer();
+
+			const { result, mimeType } = await processImageInWorker(
+				item.id,
+				imageBuffer,
+				'png', // Treat as PNG for the worker
+				outputFormat,
+				quality,
+				lossless,
+				(progress) => {
+					// Scale progress from 30-90 range
+					const scaledProgress = 30 + (progress * 0.6);
+					images.updateItem(item.id, { progress: scaledProgress });
+				}
+			);
+
+			compressedBlob = new Blob([result], { type: mimeType });
 		} else {
-			// Use worker pool for WASM-based compression
+			// Standard raster image processing via worker
 			const imageBuffer = await item.file.arrayBuffer();
 
 			const { result, mimeType } = await processImageInWorker(
@@ -117,8 +178,8 @@ async function optimizeSvg(file: File): Promise<Blob> {
 	return new Blob([result.data], { type: 'image/svg+xml' });
 }
 
-export function getOutputExtension(format: ImageFormat): string {
-	const map: Record<ImageFormat, string> = {
+export function getOutputExtension(format: OutputFormat): string {
+	const map: Record<OutputFormat, string> = {
 		jpeg: '.jpg',
 		png: '.png',
 		webp: '.webp',
@@ -128,13 +189,13 @@ export function getOutputExtension(format: ImageFormat): string {
 	return map[format];
 }
 
-export function getOutputFilename(originalName: string, format: ImageFormat): string {
+export function getOutputFilename(originalName: string, format: OutputFormat): string {
 	const baseName = originalName.replace(/\.[^/.]+$/, '');
 	return `${baseName}-optimized${getOutputExtension(format)}`;
 }
 
 // Re-process a single image with a new output format
-export async function reprocessImage(id: string, newFormat: ImageFormat) {
+export async function reprocessImage(id: string, newFormat: OutputFormat) {
 	const item = images.getItemById(id);
 	if (!item) return;
 
@@ -176,9 +237,15 @@ export async function reprocessAllImages() {
 		}
 		
 		// Determine output format based on settings
-		const outputFormat = images.settings.outputFormat === 'same' 
-			? item.format 
-			: images.settings.outputFormat;
+		let outputFormat: OutputFormat;
+		if (item.format === 'heic') {
+			// HEIC can't use 'same'
+			outputFormat = images.settings.outputFormat === 'same' ? 'webp' : images.settings.outputFormat;
+		} else {
+			outputFormat = images.settings.outputFormat === 'same' 
+				? item.format as OutputFormat 
+				: images.settings.outputFormat;
+		}
 		
 		images.updateItem(item.id, {
 			outputFormat,

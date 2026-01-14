@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { images, type ImageItem, type ImageFormat } from '$lib/stores/images.svelte';
+	import { images, type ImageItem, type OutputFormat } from '$lib/stores/images.svelte';
 	import { downloadImage } from '$lib/utils/download';
 	import { reprocessImage } from '$lib/utils/compress';
 	import CompareSlider from './CompareSlider.svelte';
 	import PreviewModal from './PreviewModal.svelte';
-	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal } from 'lucide-svelte';
+	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal, ImageIcon } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
 
 	let { item }: { item: ImageItem } = $props();
@@ -19,7 +19,10 @@
 
 	const isPositiveSavings = $derived(savings > 0);
 
-	const availableFormats: { value: ImageFormat; label: string; color: string }[] = [
+	// HEIC can't be displayed directly in most browsers
+	const canDisplayOriginal = $derived(item.format !== 'heic');
+
+	const availableFormats: { value: OutputFormat; label: string; color: string }[] = [
 		{ value: 'jpeg', label: 'JPEG', color: 'from-orange-500 to-red-500' },
 		{ value: 'png', label: 'PNG', color: 'from-blue-500 to-indigo-500' },
 		{ value: 'webp', label: 'WebP', color: 'from-green-500 to-emerald-500' },
@@ -28,7 +31,7 @@
 
 	const outputOptions = $derived(
 		item.format === 'svg'
-			? [{ value: 'svg' as ImageFormat, label: 'SVG', color: 'from-cyan-500 to-blue-500' }]
+			? [{ value: 'svg' as OutputFormat, label: 'SVG', color: 'from-cyan-500 to-blue-500' }]
 			: availableFormats
 	);
 
@@ -48,7 +51,7 @@
 		downloadImage(item);
 	}
 
-	async function handleFormatChange(format: ImageFormat) {
+	async function handleFormatChange(format: OutputFormat) {
 		showFormatMenu = false;
 		if (format !== item.outputFormat) {
 			await reprocessImage(item.id, format);
@@ -81,15 +84,23 @@
 
 	<!-- Thumbnail - clickable -->
 	<button
-		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : showPreview = true}
+		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : (canDisplayOriginal ? showPreview = true : null)}
 		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
 		aria-label="Compare or preview image"
 	>
-		<img
-			src={item.compressedUrl || item.originalUrl}
-			alt={item.name}
-			class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-		/>
+		{#if item.compressedUrl || canDisplayOriginal}
+			<img
+				src={item.compressedUrl || item.originalUrl}
+				alt={item.name}
+				class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+			/>
+		{:else}
+			<!-- HEIC placeholder before processing -->
+			<div class="h-full w-full flex flex-col items-center justify-center gap-2 text-surface-400">
+				<ImageIcon class="h-12 w-12" />
+				<span class="text-xs font-medium uppercase">HEIC</span>
+			</div>
+		{/if}
 		{#if item.status === 'processing'}
 			<div class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
 				<Loader2 class="h-10 w-10 text-white animate-spin" />

@@ -9,14 +9,16 @@
 	let errorMessage = $state<string | null>(null);
 	let errorTimeout: ReturnType<typeof setTimeout>;
 
-	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.svg';
+	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.svg,.heic,.heif';
 	const validTypes = [
 		'image/jpeg',
 		'image/jpg',
 		'image/png',
 		'image/webp',
 		'image/avif',
-		'image/svg+xml'
+		'image/svg+xml',
+		'image/heic',
+		'image/heif'
 	];
 	const hasImages = $derived(images.items.length > 0);
 
@@ -25,7 +27,8 @@
 		{ name: 'PNG', color: 'from-blue-500 to-indigo-500' },
 		{ name: 'WebP', color: 'from-green-500 to-emerald-500' },
 		{ name: 'AVIF', color: 'from-purple-500 to-pink-500' },
-		{ name: 'SVG', color: 'from-cyan-500 to-blue-500' }
+		{ name: 'SVG', color: 'from-cyan-500 to-blue-500' },
+		{ name: 'HEIC', color: 'from-pink-500 to-rose-500' }
 	];
 
 	function showError(message: string) {

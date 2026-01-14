@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { images, type ImageFormat } from '$lib/stores/images.svelte';
+	import { images, type OutputFormat } from '$lib/stores/images.svelte';
 	import { reprocessAllImages } from '$lib/utils/compress';
 	import { Settings2, Shield, RefreshCw, Sparkles } from 'lucide-svelte';
 
-	const formats: { value: 'same' | ImageFormat; label: string }[] = [
+	const formats: { value: 'same' | OutputFormat; label: string }[] = [
 		{ value: 'same', label: 'Original' },
 		{ value: 'jpeg', label: 'JPEG' },
 		{ value: 'png', label: 'PNG' },
@@ -28,7 +28,7 @@
 		images.updateSettings({ quality: value });
 	}
 
-	function handleFormatChange(format: 'same' | ImageFormat) {
+	function handleFormatChange(format: 'same' | OutputFormat) {
 		images.updateSettings({ outputFormat: format });
 	}
 

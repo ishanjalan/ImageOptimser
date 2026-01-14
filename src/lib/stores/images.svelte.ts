@@ -1,4 +1,5 @@
-export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg';
+export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg' | 'heic';
+export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg'; // HEIC is input-only
 export type ImageStatus = 'pending' | 'processing' | 'completed' | 'error';
 
 export interface ImageItem {
@@ -11,7 +12,7 @@ export interface ImageItem {
 	compressedUrl?: string;
 	compressedBlob?: Blob;
 	format: ImageFormat;
-	outputFormat: ImageFormat;
+	outputFormat: OutputFormat;
 	status: ImageStatus;
 	progress: number;
 	error?: string;
@@ -21,7 +22,7 @@ export interface ImageItem {
 
 export interface CompressionSettings {
 	quality: number;
-	outputFormat: 'same' | ImageFormat;
+	outputFormat: 'same' | OutputFormat;
 	stripMetadata: boolean;
 	lossless: boolean;
 }
@@ -61,8 +62,13 @@ function getDefaultSettings(): CompressionSettings {
 	};
 }
 
-// Extract dimensions from an image file
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+// Extract dimensions from an image file (doesn't work for HEIC in most browsers)
+async function getImageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+	// HEIC can't be loaded directly in most browsers
+	if (file.type === 'image/heic' || file.type === 'image/heif') {
+		return null; // Dimensions will be set after conversion
+	}
+	
 	return new Promise((resolve, reject) => {
 		const img = new Image();
 		const url = URL.createObjectURL(file);
@@ -89,7 +95,9 @@ function createImagesStore() {
 			'image/png': 'png',
 			'image/webp': 'webp',
 			'image/avif': 'avif',
-			'image/svg+xml': 'svg'
+			'image/svg+xml': 'svg',
+			'image/heic': 'heic',
+			'image/heif': 'heic'
 		};
 		return map[mimeType] || 'jpeg';
 	}
@@ -113,7 +121,9 @@ function createImagesStore() {
 				'image/png',
 				'image/webp',
 				'image/avif',
-				'image/svg+xml'
+				'image/svg+xml',
+				'image/heic',
+				'image/heif'
 			];
 
 			const newItems: ImageItem[] = [];
@@ -122,18 +132,30 @@ function createImagesStore() {
 				if (!validTypes.includes(file.type)) continue;
 
 				const format = getFormatFromMime(file.type);
-				// SVG always stays as SVG (can't convert to raster without quality loss)
-				const outputFormat = 
-					format === 'svg' ? 'svg' :
-					settings.outputFormat === 'same' ? format : settings.outputFormat;
+				
+				// Determine output format:
+				// - SVG always stays as SVG
+				// - HEIC must be converted (can't output HEIC), default to WebP
+				// - Others follow user setting
+				let outputFormat: OutputFormat;
+				if (format === 'svg') {
+					outputFormat = 'svg';
+				} else if (format === 'heic') {
+					// HEIC is input-only, always convert to user's preferred format (or WebP if 'same')
+					outputFormat = settings.outputFormat === 'same' ? 'webp' : settings.outputFormat;
+				} else {
+					outputFormat = settings.outputFormat === 'same' ? format as OutputFormat : settings.outputFormat;
+				}
 
-				// Get dimensions asynchronously
+				// Get dimensions asynchronously (returns null for HEIC)
 				let width: number | undefined;
 				let height: number | undefined;
 				try {
 					const dims = await getImageDimensions(file);
-					width = dims.width;
-					height = dims.height;
+					if (dims) {
+						width = dims.width;
+						height = dims.height;
+					}
 				} catch (e) {
 					console.warn('Failed to get dimensions for', file.name);
 				}
@@ -186,9 +208,15 @@ function createImagesStore() {
 			if (newSettings.outputFormat !== undefined) {
 				items = items.map((item) => {
 					if (item.status === 'pending' && item.format !== 'svg') {
+						// HEIC can't use 'same' - default to WebP
+						if (item.format === 'heic' && newSettings.outputFormat === 'same') {
+							return { ...item, outputFormat: 'webp' as OutputFormat };
+						}
 						return {
 							...item,
-							outputFormat: newSettings.outputFormat === 'same' ? item.format : newSettings.outputFormat!
+							outputFormat: newSettings.outputFormat === 'same' 
+								? item.format as OutputFormat 
+								: newSettings.outputFormat!
 						};
 					}
 					return item;
