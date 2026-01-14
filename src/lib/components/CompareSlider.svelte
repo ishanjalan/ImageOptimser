@@ -90,7 +90,7 @@
 	<!-- Comparison container -->
 	<div
 		bind:this={containerRef}
-		class="relative max-h-[80vh] max-w-[90vw] select-none overflow-hidden rounded-xl touch-none"
+		class="relative w-[95vw] max-w-5xl aspect-auto select-none overflow-hidden rounded-2xl touch-none shadow-2xl"
 		onpointerdown={handlePointerDown}
 		onpointermove={handlePointerMove}
 		onpointerup={handlePointerUp}
@@ -107,7 +107,7 @@
 		<img
 			src={compressedUrl}
 			alt="Compressed"
-			class="block max-h-[80vh] max-w-[90vw] object-contain pointer-events-none"
+			class="block w-full h-auto max-h-[85vh] object-contain pointer-events-none"
 			draggable="false"
 		/>
 
@@ -119,7 +119,7 @@
 			<img
 				src={originalUrl}
 				alt="Original"
-				class="block max-h-[80vh] max-w-[90vw] object-contain"
+				class="block w-full h-auto max-h-[85vh] object-contain"
 				draggable="false"
 			/>
 		</div>

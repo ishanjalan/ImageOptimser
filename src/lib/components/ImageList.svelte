@@ -41,7 +41,7 @@
 	}
 </script>
 
-<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<div class="mt-6 grid gap-4 sm:grid-cols-2">
 	{#each images.items as item (item.id)}
 		<div
 			class="relative {draggedId === item.id ? 'opacity-50' : ''} {dragOverId === item.id ? 'ring-2 ring-accent-start ring-offset-2 rounded-2xl' : ''}"
