@@ -89,28 +89,76 @@
 		}
 	}
 
-	// Paste from clipboard
+	// Paste from clipboard (images or URLs)
 	async function handlePaste(e: ClipboardEvent) {
 		const items = e.clipboardData?.items;
-		if (!items) return;
+		const text = e.clipboardData?.getData('text');
+		if (!items && !text) return;
 
-		const imageFiles: File[] = [];
-		for (const item of items) {
-			if (item.type.startsWith('image/')) {
-				const file = item.getAsFile();
-				if (file) {
-					// Create a new file with a proper name for pasted images
-					const ext = file.type.split('/')[1] || 'png';
-					const namedFile = new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
-					imageFiles.push(namedFile);
-				}
+		// Check for pasted URL first
+		if (text) {
+			const urlPattern = /^https?:\/\/[^\s]+\.(jpe?g|png|webp|avif|svg|gif|heic|heif)(\?[^\s]*)?$/i;
+			if (urlPattern.test(text.trim())) {
+				e.preventDefault();
+				await fetchImageFromUrl(text.trim());
+				return;
 			}
 		}
 
-		if (imageFiles.length > 0) {
-			const newItems = await images.addFiles(imageFiles);
+		// Check for pasted images
+		if (items) {
+			const imageFiles: File[] = [];
+			for (const item of items) {
+				if (item.type.startsWith('image/')) {
+					const file = item.getAsFile();
+					if (file) {
+						// Create a new file with a proper name for pasted images
+						const ext = file.type.split('/')[1] || 'png';
+						const namedFile = new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
+						imageFiles.push(namedFile);
+					}
+				}
+			}
+
+			if (imageFiles.length > 0) {
+				const newItems = await images.addFiles(imageFiles);
+				if (newItems.length > 0) {
+					await processImages(newItems.map((i) => i.id));
+				}
+			}
+		}
+	}
+
+	// Fetch image from URL (shared with DropZone)
+	async function fetchImageFromUrl(url: string) {
+		try {
+			const parsedUrl = new URL(url);
+			const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+
+			if (!response.ok) {
+				throw new Error(`Failed to fetch: ${response.status}`);
+			}
+
+			const contentType = response.headers.get('content-type') || '';
+			if (!contentType.startsWith('image/')) {
+				throw new Error('URL does not point to an image');
+			}
+
+			const blob = await response.blob();
+			const pathname = parsedUrl.pathname;
+			const filename = pathname.split('/').pop() || `image-${Date.now()}.${contentType.split('/')[1] || 'png'}`;
+			const file = new File([blob], filename, { type: blob.type });
+
+			const newItems = await images.addFiles([file]);
 			if (newItems.length > 0) {
 				await processImages(newItems.map((i) => i.id));
+			}
+		} catch (error) {
+			console.error('URL fetch error:', error);
+			if (error instanceof TypeError && error.message.includes('fetch')) {
+				toast.error('CORS blocked - try downloading the image first');
+			} else {
+				toast.error('Failed to fetch image from URL');
 			}
 		}
 	}

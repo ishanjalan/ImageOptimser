@@ -25,6 +25,7 @@ export interface CompressionSettings {
 	outputFormat: 'same' | OutputFormat;
 	stripMetadata: boolean;
 	lossless: boolean;
+	maxDimension: number | null; // Max width/height in pixels, null = no resize
 }
 
 const SETTINGS_KEY = 'squish-settings';
@@ -58,7 +59,8 @@ function getDefaultSettings(): CompressionSettings {
 		quality: 75, // "Web" preset - optimal for web, Android, iOS
 		outputFormat: 'webp', // Best compression + universal support (web, Android, iOS 14+)
 		stripMetadata: true,
-		lossless: false
+		lossless: false,
+		maxDimension: null // No resize by default
 	};
 }
 

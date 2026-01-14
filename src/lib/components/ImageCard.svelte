@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { images, type ImageItem, type OutputFormat } from '$lib/stores/images.svelte';
 	import { downloadImage } from '$lib/utils/download';
-	import { reprocessImage } from '$lib/utils/compress';
+	import { reprocessImage, getOutputFilename } from '$lib/utils/compress';
+	import { addToast } from './Toast.svelte';
 	import CompareSlider from './CompareSlider.svelte';
 	import PreviewModal from './PreviewModal.svelte';
-	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal, ImageIcon } from 'lucide-svelte';
+	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal, ImageIcon, Copy } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
 
 	let { item }: { item: ImageItem } = $props();
@@ -12,6 +13,9 @@
 	let showFormatMenu = $state(false);
 	let showCompare = $state(false);
 	let showPreview = $state(false);
+
+	// Check if Clipboard API is available
+	const canCopyToClipboard = typeof navigator !== 'undefined' && 'clipboard' in navigator && 'write' in navigator.clipboard;
 
 	const savings = $derived(
 		item.compressedSize ? Math.round((1 - item.compressedSize / item.originalSize) * 100) : 0
@@ -51,6 +55,22 @@
 		downloadImage(item);
 	}
 
+	async function handleCopy() {
+		if (!item.compressedBlob || !canCopyToClipboard) return;
+
+		try {
+			// Create a ClipboardItem with the compressed image
+			const clipboardItem = new ClipboardItem({
+				[item.compressedBlob.type]: item.compressedBlob
+			});
+			await navigator.clipboard.write([clipboardItem]);
+			addToast('Copied to clipboard!', 'success');
+		} catch (error) {
+			console.error('Failed to copy:', error);
+			addToast('Failed to copy to clipboard', 'error');
+		}
+	}
+
 	async function handleFormatChange(format: OutputFormat) {
 		showFormatMenu = false;
 		if (format !== item.outputFormat) {
@@ -66,6 +86,31 @@
 		const format = outputOptions.find(f => f.value === item.outputFormat);
 		return format?.color || 'from-gray-500 to-gray-600';
 	}
+
+	// Handle drag start for drag-out-to-save
+	function handleDragStart(e: DragEvent) {
+		if (!item.compressedBlob || !item.compressedUrl || item.status !== 'completed') {
+			e.preventDefault();
+			return;
+		}
+
+		const filename = getOutputFilename(item.name, item.outputFormat);
+		const mimeType = item.compressedBlob.type;
+
+		// Set the drag image
+		if (e.dataTransfer) {
+			// Use DownloadURL format for native file drag (Chrome/Edge)
+			// Format: mime:filename:url
+			e.dataTransfer.setData('DownloadURL', `${mimeType}:${filename}:${item.compressedUrl}`);
+			
+			// Also set as file for other browsers
+			e.dataTransfer.setData('text/plain', filename);
+			e.dataTransfer.effectAllowed = 'copy';
+		}
+	}
+
+	// Computed: is the image ready for drag
+	const canDrag = $derived(item.status === 'completed' && item.compressedBlob && item.compressedUrl);
 </script>
 
 <div
@@ -82,17 +127,24 @@
 		<X class="h-4 w-4" />
 	</button>
 
-	<!-- Thumbnail - clickable -->
-	<button
+	<!-- Thumbnail - clickable and draggable when completed -->
+	<div
+		role="button"
+		tabindex="0"
 		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : (canDisplayOriginal ? showPreview = true : null)}
-		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
-		aria-label="Compare or preview image"
+		onkeydown={(e) => e.key === 'Enter' && ((item.status === 'completed' && item.compressedUrl) ? showCompare = true : (canDisplayOriginal ? showPreview = true : null))}
+		draggable={canDrag}
+		ondragstart={handleDragStart}
+		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none {canDrag ? 'cursor-grab active:cursor-grabbing' : ''}"
+		aria-label={canDrag ? 'Drag to save or click to compare' : 'Compare or preview image'}
+		title={canDrag ? 'Drag to desktop to save' : undefined}
 	>
 		{#if item.compressedUrl || canDisplayOriginal}
 			<img
 				src={item.compressedUrl || item.originalUrl}
 				alt={item.name}
-				class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+				class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 pointer-events-none"
+				draggable="false"
 			/>
 		{:else}
 			<!-- HEIC placeholder before processing -->
@@ -109,7 +161,7 @@
 		
 		<!-- Savings badge overlay -->
 		{#if item.status === 'completed'}
-			<div class="absolute top-3 right-3">
+			<div class="absolute top-3 right-3 pointer-events-none">
 				{#if isPositiveSavings}
 					<span class="flex items-center gap-1.5 rounded-full bg-green-500 px-3 py-1.5 text-sm font-bold text-white shadow-lg">
 						<Check class="h-4 w-4" />
@@ -121,8 +173,15 @@
 					</span>
 				{/if}
 			</div>
+			
+			<!-- Drag hint on hover -->
+			<div class="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+				<span class="rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm">
+					Drag to save
+				</span>
+			</div>
 		{/if}
-	</button>
+	</div>
 
 	<!-- Info section -->
 	<div class="p-4">
@@ -220,19 +279,30 @@
 				</div>
 
 				<!-- Action buttons -->
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-1.5">
 					<button
 						onclick={() => showCompare = true}
-						class="flex h-9 w-9 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+						class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
 						aria-label="Compare"
 						title="Compare before/after"
 					>
-						<SplitSquareHorizontal class="h-5 w-5" />
+						<SplitSquareHorizontal class="h-4 w-4" />
 					</button>
+					{#if canCopyToClipboard}
+						<button
+							onclick={handleCopy}
+							class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+							aria-label="Copy to clipboard"
+							title="Copy to clipboard"
+						>
+							<Copy class="h-4 w-4" />
+						</button>
+					{/if}
 					<button
 						onclick={handleDownload}
-						class="flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-accent-start to-accent-end px-3 text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-md"
+						class="flex h-8 items-center gap-1.5 rounded-lg bg-gradient-to-r from-accent-start to-accent-end px-2.5 text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-md"
 						aria-label="Download"
+						title="Download"
 					>
 						<Download class="h-4 w-4" />
 					</button>

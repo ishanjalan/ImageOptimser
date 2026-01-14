@@ -82,12 +82,16 @@ async function compressImage(item: ImageItem) {
 
 		const quality = images.settings.quality;
 		const lossless = images.settings.lossless;
+		const maxDimension = images.settings.maxDimension;
 		const outputFormat = item.outputFormat;
 
 		let compressedBlob: Blob;
+		let finalWidth: number | undefined;
+		let finalHeight: number | undefined;
 
 		if (item.format === 'svg' && outputFormat === 'svg') {
 			// SVG optimization stays on main thread (SVGO is JS, not WASM)
+			// Note: SVG resize is not supported (vector format)
 			compressedBlob = await optimizeSvg(item.file);
 			images.updateItem(item.id, { progress: 90 });
 		} else if (item.format === 'heic') {
@@ -106,13 +110,14 @@ async function compressImage(item: ImageItem) {
 			// Now process the PNG through the worker
 			const imageBuffer = await pngBlob.arrayBuffer();
 
-			const { result, mimeType } = await processImageInWorker(
+			const { result, mimeType, newWidth, newHeight } = await processImageInWorker(
 				item.id,
 				imageBuffer,
 				'png', // Treat as PNG for the worker
 				outputFormat,
 				quality,
 				lossless,
+				maxDimension,
 				(progress) => {
 					// Scale progress from 30-90 range
 					const scaledProgress = 30 + (progress * 0.6);
@@ -121,35 +126,49 @@ async function compressImage(item: ImageItem) {
 			);
 
 			compressedBlob = new Blob([result], { type: mimeType });
+			finalWidth = newWidth;
+			finalHeight = newHeight;
 		} else {
 			// Standard raster image processing via worker
 			const imageBuffer = await item.file.arrayBuffer();
 
-			const { result, mimeType } = await processImageInWorker(
+			const { result, mimeType, newWidth, newHeight } = await processImageInWorker(
 				item.id,
 				imageBuffer,
 				item.format,
 				outputFormat,
 				quality,
 				lossless,
+				maxDimension,
 				(progress) => {
 					images.updateItem(item.id, { progress });
 				}
 			);
 
 			compressedBlob = new Blob([result], { type: mimeType });
+			finalWidth = newWidth;
+			finalHeight = newHeight;
 		}
 
 		// Create URL for preview
 		const compressedUrl = URL.createObjectURL(compressedBlob);
 
-		images.updateItem(item.id, {
+		// Update item with final dimensions if they changed (due to resize)
+		const updates: Partial<ImageItem> = {
 			status: 'completed',
 			progress: 100,
 			compressedSize: compressedBlob.size,
 			compressedUrl,
 			compressedBlob
-		});
+		};
+
+		// Update dimensions if resized
+		if (finalWidth && finalHeight && (finalWidth !== item.width || finalHeight !== item.height)) {
+			updates.width = finalWidth;
+			updates.height = finalHeight;
+		}
+
+		images.updateItem(item.id, updates);
 	} catch (error) {
 		console.error('Compression error:', error);
 		images.updateItem(item.id, {

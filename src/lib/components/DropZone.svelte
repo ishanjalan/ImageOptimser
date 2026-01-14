@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Upload, FileImage, AlertCircle } from 'lucide-svelte';
+	import { Upload, FileImage, AlertCircle, Link, Loader2, X } from 'lucide-svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { processImages } from '$lib/utils/compress';
 	import { fade } from 'svelte/transition';
@@ -8,6 +8,12 @@
 	let fileInput: HTMLInputElement;
 	let errorMessage = $state<string | null>(null);
 	let errorTimeout: ReturnType<typeof setTimeout>;
+	
+	// URL input state
+	let showUrlInput = $state(false);
+	let urlValue = $state('');
+	let isLoadingUrl = $state(false);
+	let urlInputRef: HTMLInputElement;
 
 	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.svg,.heic,.heif';
 	const validTypes = [
@@ -97,6 +103,83 @@
 
 	function openFilePicker() {
 		fileInput?.click();
+	}
+
+	function handleUrlInputClick(e: MouseEvent) {
+		e.stopPropagation();
+		showUrlInput = true;
+		// Focus the input after it's shown
+		setTimeout(() => urlInputRef?.focus(), 50);
+	}
+
+	function closeUrlInput() {
+		showUrlInput = false;
+		urlValue = '';
+	}
+
+	async function fetchImageFromUrl(url: string) {
+		if (!url.trim()) return;
+
+		isLoadingUrl = true;
+		try {
+			// Validate URL
+			const parsedUrl = new URL(url);
+			
+			// Fetch the image
+			const response = await fetch(url, {
+				mode: 'cors',
+				credentials: 'omit'
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to fetch: ${response.status}`);
+			}
+
+			const contentType = response.headers.get('content-type') || '';
+			if (!contentType.startsWith('image/')) {
+				throw new Error('URL does not point to an image');
+			}
+
+			const blob = await response.blob();
+			
+			// Extract filename from URL or use default
+			const pathname = parsedUrl.pathname;
+			const filename = pathname.split('/').pop() || `image-${Date.now()}.${contentType.split('/')[1] || 'png'}`;
+			
+			// Create File object
+			const file = new File([blob], filename, { type: blob.type });
+			
+			// Process the file
+			await processFiles([file]);
+			
+			// Close the input
+			closeUrlInput();
+		} catch (error) {
+			console.error('URL fetch error:', error);
+			if (error instanceof TypeError && error.message.includes('fetch')) {
+				showError('CORS blocked - try downloading the image first');
+			} else if (error instanceof Error) {
+				showError(error.message);
+			} else {
+				showError('Failed to fetch image from URL');
+			}
+		} finally {
+			isLoadingUrl = false;
+		}
+	}
+
+	function handleUrlKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			fetchImageFromUrl(urlValue);
+		} else if (e.key === 'Escape') {
+			closeUrlInput();
+		}
+	}
+
+	// Export for parent component to call
+	export async function processImageUrl(url: string) {
+		await fetchImageFromUrl(url);
 	}
 </script>
 
@@ -198,6 +281,56 @@
 					Max file size: Unlimited • Batch upload supported • Paste from clipboard
 				</p>
 			</div>
+		</div>
+	{/if}
+
+	<!-- URL Input section -->
+	{#if !hasImages}
+		<div class="mt-4 flex justify-center" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+			{#if showUrlInput}
+				<div class="flex items-center gap-2 w-full max-w-md" transition:fade={{ duration: 150 }}>
+					<div class="relative flex-1">
+						<Link class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400" />
+						<input
+							bind:this={urlInputRef}
+							bind:value={urlValue}
+							type="url"
+							placeholder="https://example.com/image.jpg"
+							class="w-full rounded-xl bg-surface-800 border border-surface-700 pl-10 pr-4 py-2.5 text-sm text-surface-100 placeholder:text-surface-500 focus:border-accent-start focus:outline-none focus:ring-1 focus:ring-accent-start"
+							onkeydown={handleUrlKeydown}
+							disabled={isLoadingUrl}
+						/>
+					</div>
+					{#if isLoadingUrl}
+						<div class="flex h-10 w-10 items-center justify-center">
+							<Loader2 class="h-5 w-5 text-accent-start animate-spin" />
+						</div>
+					{:else}
+						<button
+							onclick={() => fetchImageFromUrl(urlValue)}
+							disabled={!urlValue.trim()}
+							class="flex h-10 items-center gap-2 rounded-xl bg-accent-start px-4 text-sm font-medium text-white transition-all hover:bg-accent-start/90 disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							Fetch
+						</button>
+						<button
+							onclick={closeUrlInput}
+							class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 hover:bg-surface-700 hover:text-surface-200"
+							aria-label="Close URL input"
+						>
+							<X class="h-5 w-5" />
+						</button>
+					{/if}
+				</div>
+			{:else}
+				<button
+					onclick={handleUrlInputClick}
+					class="flex items-center gap-2 text-sm text-surface-400 hover:text-accent-start transition-colors"
+				>
+					<Link class="h-4 w-4" />
+					<span>or paste image URL</span>
+				</button>
+			{/if}
 		</div>
 	{/if}
 

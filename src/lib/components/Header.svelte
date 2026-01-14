@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { Github, Zap, Command, Keyboard } from 'lucide-svelte';
-	import { scale } from 'svelte/transition';
+	import { Github, Zap, Command, Keyboard, WifiOff, Download } from 'lucide-svelte';
+	import { scale, fade } from 'svelte/transition';
+	import { onMount } from 'svelte';
 
 	let showShortcuts = $state(false);
+	let isOffline = $state(false);
+	let showInstallPrompt = $state(false);
+	let deferredPrompt: any = null;
 
 	// Detect if Mac for keyboard shortcut display
 	const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -21,6 +25,52 @@
 			showShortcuts = false;
 		}
 	}
+
+	// Handle online/offline status
+	function updateOnlineStatus() {
+		isOffline = !navigator.onLine;
+	}
+
+	// Handle PWA install prompt
+	function handleBeforeInstallPrompt(e: Event) {
+		e.preventDefault();
+		deferredPrompt = e;
+		showInstallPrompt = true;
+	}
+
+	async function handleInstallClick() {
+		if (!deferredPrompt) return;
+
+		deferredPrompt.prompt();
+		const { outcome } = await deferredPrompt.userChoice;
+		
+		if (outcome === 'accepted') {
+			showInstallPrompt = false;
+		}
+		deferredPrompt = null;
+	}
+
+	function dismissInstallPrompt() {
+		showInstallPrompt = false;
+	}
+
+	onMount(() => {
+		// Set initial online status
+		updateOnlineStatus();
+
+		// Listen for online/offline events
+		window.addEventListener('online', updateOnlineStatus);
+		window.addEventListener('offline', updateOnlineStatus);
+
+		// Listen for PWA install prompt
+		window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+		return () => {
+			window.removeEventListener('online', updateOnlineStatus);
+			window.removeEventListener('offline', updateOnlineStatus);
+			window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+		};
+	});
 </script>
 
 <svelte:window onclick={handleClickOutside} />
@@ -44,6 +94,31 @@
 
 			<!-- Right side -->
 			<div class="flex items-center gap-2">
+				<!-- Offline indicator -->
+				{#if isOffline}
+					<div
+						class="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2 text-amber-500"
+						transition:fade={{ duration: 150 }}
+						title="You're offline. Previously cached files still work."
+					>
+						<WifiOff class="h-4 w-4" />
+						<span class="text-xs font-medium hidden sm:inline">Offline</span>
+					</div>
+				{/if}
+
+				<!-- Install PWA prompt -->
+				{#if showInstallPrompt}
+					<button
+						onclick={handleInstallClick}
+						class="flex items-center gap-2 rounded-xl bg-accent-start/10 px-3 py-2 text-accent-start hover:bg-accent-start/20 transition-colors"
+						transition:scale={{ duration: 150, start: 0.95 }}
+						title="Install Squish as an app"
+					>
+						<Download class="h-4 w-4" />
+						<span class="text-xs font-medium hidden sm:inline">Install App</span>
+					</button>
+				{/if}
+
 				<!-- Keyboard shortcuts -->
 				<div class="relative" data-shortcuts-popover>
 					<button
@@ -81,7 +156,7 @@
 				</div>
 
 				<a
-					href="https://github.com/ishanjalan/ImageOptimser"
+					href="https://github.com/ishanjalan/Squish"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 transition-all hover:bg-surface-800 hover:text-surface-100"
