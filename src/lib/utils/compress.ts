@@ -79,7 +79,6 @@ async function compressImage(item: ImageItem) {
 
 		const quality = images.settings.quality;
 		const outputFormat = item.outputFormat;
-		const { resizeEnabled, maxWidth, maxHeight } = images.settings;
 
 		let compressedBlob: Blob;
 
@@ -94,16 +93,9 @@ async function compressImage(item: ImageItem) {
 		} else {
 			// Decode the source image
 			images.updateItem(item.id, { progress: 20 });
-			let imageData = await decodeImage(item.file, item.format);
+			const imageData = await decodeImage(item.file, item.format);
 			
-			images.updateItem(item.id, { progress: 40 });
-			
-			// Resize if enabled and dimensions exceed limits
-			if (resizeEnabled && (maxWidth || maxHeight)) {
-				imageData = resizeImageData(imageData, maxWidth, maxHeight);
-			}
-			
-			images.updateItem(item.id, { progress: 60 });
+			images.updateItem(item.id, { progress: 50 });
 			
 			// Encode to target format
 			const encodedBuffer = await encodeImage(imageData, outputFormat, quality);
@@ -129,49 +121,6 @@ async function compressImage(item: ImageItem) {
 			error: error instanceof Error ? error.message : 'Compression failed'
 		});
 	}
-}
-
-function resizeImageData(imageData: ImageData, maxWidth?: number, maxHeight?: number): ImageData {
-	const { width, height } = imageData;
-	
-	// Calculate new dimensions
-	let newWidth = width;
-	let newHeight = height;
-	
-	if (maxWidth && width > maxWidth) {
-		newWidth = maxWidth;
-		newHeight = Math.round((height / width) * maxWidth);
-	}
-	
-	if (maxHeight && newHeight > maxHeight) {
-		newHeight = maxHeight;
-		newWidth = Math.round((width / height) * maxHeight);
-	}
-	
-	// If no resize needed, return original
-	if (newWidth === width && newHeight === height) {
-		return imageData;
-	}
-	
-	// Create canvas for resizing
-	const canvas = document.createElement('canvas');
-	const ctx = canvas.getContext('2d')!;
-	
-	// Create temporary canvas with original image
-	const tempCanvas = document.createElement('canvas');
-	const tempCtx = tempCanvas.getContext('2d')!;
-	tempCanvas.width = width;
-	tempCanvas.height = height;
-	tempCtx.putImageData(imageData, 0, 0);
-	
-	// Draw resized
-	canvas.width = newWidth;
-	canvas.height = newHeight;
-	ctx.imageSmoothingEnabled = true;
-	ctx.imageSmoothingQuality = 'high';
-	ctx.drawImage(tempCanvas, 0, 0, newWidth, newHeight);
-	
-	return ctx.getImageData(0, 0, newWidth, newHeight);
 }
 
 async function decodeImage(file: File, format: ImageFormat): Promise<ImageData> {

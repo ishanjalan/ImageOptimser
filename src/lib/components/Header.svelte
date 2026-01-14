@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import { Sun, Moon, Github, Zap } from 'lucide-svelte';
 
 	let isDark = $state(true);
@@ -23,7 +24,7 @@
 			class="glass flex items-center justify-between rounded-xl px-4 py-2 shadow-lg shadow-black/5"
 		>
 			<!-- Logo -->
-			<a href="/" class="flex items-center gap-2 group">
+			<a href="{base}/" class="flex items-center gap-2 group">
 				<div
 					class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent-start to-accent-end shadow-lg shadow-accent-start/30 transition-transform group-hover:scale-110"
 				>
@@ -37,7 +38,7 @@
 			<!-- Right side -->
 			<div class="flex items-center gap-1">
 				<a
-					href="https://github.com"
+					href="https://github.com/ishanjalan/ImageOptimser"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-500 transition-all hover:bg-surface-100 hover:text-surface-900 dark:hover:bg-surface-800 dark:hover:text-surface-100"
