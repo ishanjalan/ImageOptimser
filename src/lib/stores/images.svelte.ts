@@ -28,6 +28,12 @@ export interface CompressionSettings {
 	maxDimension: number | null; // Max width/height in pixels, null = no resize
 }
 
+export interface BatchStats {
+	startTime: number | null;
+	endTime: number | null;
+	totalImages: number;
+}
+
 const SETTINGS_KEY = 'squish-settings';
 
 function loadSettings(): CompressionSettings {
@@ -89,6 +95,7 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
 function createImagesStore() {
 	let items = $state<ImageItem[]>([]);
 	let settings = $state<CompressionSettings>(loadSettings());
+	let batchStats = $state<BatchStats>({ startTime: null, endTime: null, totalImages: 0 });
 
 	function getFormatFromMime(mimeType: string): ImageFormat {
 		const map: Record<string, ImageFormat> = {
@@ -114,6 +121,21 @@ function createImagesStore() {
 		},
 		get settings() {
 			return settings;
+		},
+		get batchStats() {
+			return batchStats;
+		},
+
+		startBatch(count: number) {
+			batchStats = { startTime: Date.now(), endTime: null, totalImages: count };
+		},
+
+		endBatch() {
+			batchStats = { ...batchStats, endTime: Date.now() };
+		},
+
+		resetBatchStats() {
+			batchStats = { startTime: null, endTime: null, totalImages: 0 };
 		},
 
 		async addFiles(files: FileList | File[]) {
@@ -200,6 +222,7 @@ function createImagesStore() {
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
 			});
 			items = [];
+			batchStats = { startTime: null, endTime: null, totalImages: 0 };
 		},
 
 		updateSettings(newSettings: Partial<CompressionSettings>) {

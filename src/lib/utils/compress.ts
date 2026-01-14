@@ -8,6 +8,15 @@ let isProcessing = false;
 const queue: string[] = [];
 
 export async function processImages(ids: string[]) {
+	// Start batch timing if this is a new batch
+	if (!isProcessing && ids.length > 0) {
+		images.startBatch(ids.length);
+	} else if (isProcessing) {
+		// Adding to existing batch - update total count
+		const currentTotal = images.batchStats.totalImages;
+		images.startBatch(currentTotal + ids.length);
+	}
+
 	queue.push(...ids);
 	if (!isProcessing) {
 		processQueue();
@@ -44,6 +53,9 @@ async function processQueue() {
 	// Check if more items were added while processing
 	if (queue.length > 0) {
 		processQueue();
+	} else {
+		// All done - record end time
+		images.endBatch();
 	}
 }
 
@@ -249,6 +261,9 @@ export async function reprocessAllImages() {
 	
 	if (completedItems.length === 0) return;
 
+	// Start batch timing
+	images.startBatch(completedItems.length);
+
 	// Reset all completed items to pending
 	for (const item of completedItems) {
 		if (item.compressedUrl) {
@@ -289,4 +304,7 @@ export async function reprocessAllImages() {
 	});
 
 	await Promise.all(processingPromises);
+	
+	// End batch timing
+	images.endBatch();
 }

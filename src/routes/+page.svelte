@@ -5,6 +5,7 @@
 	import ImageList from '$lib/components/ImageList.svelte';
 	import Settings from '$lib/components/Settings.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import BatchSummary from '$lib/components/BatchSummary.svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { processImages } from '$lib/utils/compress';
 	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown } from 'lucide-svelte';
@@ -13,6 +14,7 @@
 	import { toast } from '$lib/components/Toast.svelte';
 
 	let showClearConfirm = $state(false);
+	let showBatchSummary = $state(false);
 	let previousCompletedCount = $state(0);
 
 	const hasImages = $derived(images.items.length > 0);
@@ -47,10 +49,11 @@
 				: ''
 	);
 
-	// Show toast when all images complete
+	// Show batch summary and toast when all images complete
 	$effect(() => {
 		if (completedCount > previousCompletedCount && processingCount === 0 && completedCount === images.items.length && images.items.length > 0) {
-			toast.success(`All ${completedCount} images optimized!`);
+			// Show batch summary with stats
+			showBatchSummary = true;
 		}
 		previousCompletedCount = completedCount;
 	});
@@ -265,8 +268,13 @@
 				</div>
 			{/if}
 
+			<!-- Batch Summary (shown after all images complete) -->
+			{#if showBatchSummary}
+				<BatchSummary onclose={() => showBatchSummary = false} />
+			{/if}
+
 			<!-- Stats bar when there are images -->
-			{#if hasImages}
+			{#if hasImages && !showBatchSummary}
 				<div
 					class="glass mb-6 sm:mb-8 flex flex-wrap items-center justify-between gap-4 sm:gap-6 rounded-2xl p-4 sm:p-6"
 					in:fade={{ duration: 200 }}
@@ -348,6 +356,7 @@
 	onconfirm={() => {
 		images.clearAll();
 		showClearConfirm = false;
+		showBatchSummary = false;
 	}}
 	oncancel={() => showClearConfirm = false}
 />
