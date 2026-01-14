@@ -1,0 +1,125 @@
+@import 'tailwindcss';
+
+/* Theme variables */
+@theme {
+	--font-sans: 'Outfit', system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono', monospace;
+
+	/* Custom colors */
+	--color-surface-50: #fafafa;
+	--color-surface-100: #f4f4f5;
+	--color-surface-200: #e4e4e7;
+	--color-surface-300: #d4d4d8;
+	--color-surface-400: #a1a1aa;
+	--color-surface-500: #71717a;
+	--color-surface-600: #52525b;
+	--color-surface-700: #3f3f46;
+	--color-surface-800: #27272a;
+	--color-surface-900: #18181b;
+	--color-surface-950: #09090b;
+
+	/* Accent gradient colors */
+	--color-accent-start: #10b981;
+	--color-accent-end: #06b6d4;
+}
+
+/* Base styles */
+html {
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	@apply bg-surface-50 text-surface-900 transition-colors duration-300;
+}
+
+:root.dark body {
+	@apply bg-surface-950 text-surface-100;
+}
+
+/* Custom utilities */
+.gradient-text {
+	@apply bg-gradient-to-r from-accent-start to-accent-end bg-clip-text text-transparent;
+}
+
+.gradient-border {
+	position: relative;
+}
+
+.gradient-border::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	padding: 2px;
+	background: linear-gradient(135deg, var(--color-accent-start), var(--color-accent-end));
+	border-radius: inherit;
+	mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+	mask-composite: exclude;
+	-webkit-mask-composite: xor;
+	pointer-events: none;
+}
+
+/* Glassmorphism */
+.glass {
+	@apply bg-white/70 backdrop-blur-xl border border-white/20;
+}
+
+:root.dark .glass {
+	@apply bg-surface-900/70 border-surface-700/30;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	@apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	@apply bg-surface-300 rounded-full;
+}
+
+:root.dark ::-webkit-scrollbar-thumb {
+	@apply bg-surface-700;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	@apply bg-surface-400;
+}
+
+:root.dark ::-webkit-scrollbar-thumb:hover {
+	@apply bg-surface-600;
+}
+
+/* Animation keyframes */
+@keyframes pulse-glow {
+	0%,
+	100% {
+		box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+	}
+	50% {
+		box-shadow: 0 0 40px rgba(6, 182, 212, 0.5);
+	}
+}
+
+@keyframes float {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+
+.animate-pulse-glow {
+	animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-float {
+	animation: float 3s ease-in-out infinite;
+}
