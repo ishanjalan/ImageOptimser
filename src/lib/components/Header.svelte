@@ -156,7 +156,7 @@
 				</div>
 
 				<a
-					href="https://github.com/ishanjalan/Squish"
+					href="https://github.com/ishanjalan/ImageOptimser"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 transition-all hover:bg-surface-800 hover:text-surface-100"
