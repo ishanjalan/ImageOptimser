@@ -248,3 +248,33 @@ export function getOutputFilename(originalName: string, format: ImageFormat): st
 	const baseName = originalName.replace(/\.[^/.]+$/, '');
 	return `${baseName}-optimized${getOutputExtension(format)}`;
 }
+
+// Re-process a single image with a new output format
+export async function reprocessImage(id: string, newFormat: ImageFormat) {
+	const item = images.getItemById(id);
+	if (!item) return;
+
+	// Clean up old compressed URL
+	if (item.compressedUrl) {
+		URL.revokeObjectURL(item.compressedUrl);
+	}
+
+	// Update the item with new format and reset status
+	images.updateItem(id, {
+		outputFormat: newFormat,
+		status: 'pending',
+		progress: 0,
+		compressedSize: undefined,
+		compressedUrl: undefined,
+		compressedBlob: undefined
+	});
+
+	// Initialize codecs if needed
+	await initCodecs();
+
+	// Get fresh item reference
+	const updatedItem = images.getItemById(id);
+	if (updatedItem) {
+		await compressImage(updatedItem);
+	}
+}

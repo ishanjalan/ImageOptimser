@@ -1,16 +1,36 @@
 <script lang="ts">
-	import { images, type ImageItem } from '$lib/stores/images.svelte';
+	import { images, type ImageItem, type ImageFormat } from '$lib/stores/images.svelte';
 	import { downloadImage } from '$lib/utils/download';
-	import { Download, X, AlertCircle, Check, Loader2, ArrowRight } from 'lucide-svelte';
+	import { reprocessImage } from '$lib/utils/compress';
+	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, RefreshCw, ChevronDown } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
 
 	let { item }: { item: ImageItem } = $props();
+
+	let showFormatMenu = $state(false);
 
 	const savings = $derived(
 		item.compressedSize ? Math.round((1 - item.compressedSize / item.originalSize) * 100) : 0
 	);
 
 	const isPositiveSavings = $derived(savings > 0);
+
+	// Available output formats based on input format
+	const availableFormats: { value: ImageFormat; label: string; color: string }[] = [
+		{ value: 'jpeg', label: 'JPEG', color: 'from-orange-500 to-red-500' },
+		{ value: 'png', label: 'PNG', color: 'from-blue-500 to-indigo-500' },
+		{ value: 'webp', label: 'WebP', color: 'from-green-500 to-emerald-500' },
+		{ value: 'avif', label: 'AVIF', color: 'from-purple-500 to-pink-500' }
+	];
+
+	// Filter out SVG input - can't convert SVG to raster easily
+	const outputOptions = $derived(
+		item.format === 'svg'
+			? [{ value: 'svg' as ImageFormat, label: 'SVG', color: 'from-cyan-500 to-blue-500' }]
+			: item.format === 'gif'
+				? [{ value: 'gif' as ImageFormat, label: 'GIF', color: 'from-yellow-500 to-orange-500' }, ...availableFormats]
+				: availableFormats
+	);
 
 	function formatBytes(bytes: number): string {
 		if (bytes === 0) return '0 B';
@@ -26,6 +46,18 @@
 
 	function handleDownload() {
 		downloadImage(item);
+	}
+
+	async function handleFormatChange(format: ImageFormat) {
+		showFormatMenu = false;
+		if (format !== item.outputFormat) {
+			await reprocessImage(item.id, format);
+		}
+	}
+
+	function getCurrentFormatColor() {
+		const format = outputOptions.find(f => f.value === item.outputFormat);
+		return format?.color || 'from-gray-500 to-gray-600';
 	}
 </script>
 
@@ -109,20 +141,51 @@
 				</div>
 			{/if}
 
-			<!-- Format badge -->
+			<!-- Format selector -->
 			<div class="mt-2 flex items-center gap-2">
 				<span
 					class="rounded bg-surface-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-surface-500 dark:bg-surface-800"
 				>
 					{item.format}
 				</span>
-				{#if item.format !== item.outputFormat}
-					<ArrowRight class="h-3 w-3 text-surface-400" />
-					<span
-						class="rounded bg-accent-start/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-accent-start"
+				<ArrowRight class="h-3 w-3 text-surface-400" />
+				
+				<!-- Quick format dropdown -->
+				<div class="relative">
+					<button
+						onclick={() => showFormatMenu = !showFormatMenu}
+						disabled={item.status === 'processing'}
+						class="flex items-center gap-1 rounded bg-gradient-to-r {getCurrentFormatColor()} px-2 py-0.5 text-[10px] font-semibold uppercase text-white shadow-sm transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{item.outputFormat}
-					</span>
+						<ChevronDown class="h-3 w-3" />
+					</button>
+					
+					{#if showFormatMenu}
+						<div
+							class="absolute left-0 top-full z-20 mt-1 min-w-[100px] overflow-hidden rounded-lg bg-white shadow-xl dark:bg-surface-800"
+							in:scale={{ duration: 150, start: 0.95 }}
+							out:fade={{ duration: 100 }}
+						>
+							{#each outputOptions as format}
+								<button
+									onclick={() => handleFormatChange(format.value)}
+									class="flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
+								>
+									<span class="h-2 w-2 rounded-full bg-gradient-to-r {format.color}"></span>
+									<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
+									{#if item.outputFormat === format.value}
+										<Check class="ml-auto h-3 w-3 text-accent-start" />
+									{/if}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<!-- Re-process hint -->
+				{#if item.status === 'completed' && item.format !== item.outputFormat}
+					<span class="text-[10px] text-surface-400">Click to convert</span>
 				{/if}
 			</div>
 		</div>
@@ -141,3 +204,12 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Click outside to close menu -->
+{#if showFormatMenu}
+	<button
+		class="fixed inset-0 z-10"
+		onclick={() => showFormatMenu = false}
+		aria-label="Close menu"
+	></button>
+{/if}
