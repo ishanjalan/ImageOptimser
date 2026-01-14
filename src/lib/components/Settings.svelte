@@ -44,19 +44,21 @@
 		<!-- Quality with integrated presets -->
 		<div class="flex items-center gap-3 flex-1 min-w-[280px]">
 			<span class="text-xs font-medium text-surface-500 uppercase tracking-wide">Quality</span>
-			<div class="relative flex-1 max-w-[300px]">
-				<!-- Preset markers -->
-				<div class="absolute -top-4 left-0 right-0 flex justify-between px-[10px] pointer-events-none">
-					{#each presets as preset}
-						<button
-							class="relative pointer-events-auto text-[10px] font-medium transition-colors {images.settings.quality === preset.value ? 'text-accent-start' : 'text-surface-400 hover:text-surface-300'}"
-							style="left: {getPresetPosition(preset.value) - 50}%"
-							onclick={() => handlePresetClick(preset.value)}
-						>
-							{preset.label}
-						</button>
-					{/each}
-				</div>
+			<div class="relative flex-1 max-w-[300px] pt-5">
+				<!-- Preset labels and tick marks -->
+				{#each presets as preset}
+					<button
+						class="absolute pointer-events-auto flex flex-col items-center gap-1 -translate-x-1/2 transition-colors {images.settings.quality === preset.value ? 'text-accent-start' : 'text-surface-400 hover:text-surface-300'}"
+						style="left: {getPresetPosition(preset.value)}%; top: 0;"
+						onclick={() => handlePresetClick(preset.value)}
+					>
+						<span class="text-[10px] font-medium">{preset.label}</span>
+					</button>
+					<div
+						class="absolute w-1 h-3 rounded-full pointer-events-none -translate-x-1/2 {images.settings.quality === preset.value ? 'bg-accent-start' : 'bg-surface-600'}"
+						style="left: {getPresetPosition(preset.value)}%; top: 18px;"
+					></div>
+				{/each}
 				<!-- Slider -->
 				<input
 					type="range"
@@ -67,15 +69,6 @@
 					oninput={handleQualityChange}
 					class="w-full h-1.5 bg-surface-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-start [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
 				/>
-				<!-- Preset tick marks -->
-				<div class="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex pointer-events-none">
-					{#each presets as preset}
-						<div
-							class="absolute w-1 h-1 rounded-full {images.settings.quality === preset.value ? 'bg-accent-start' : 'bg-surface-500'}"
-							style="left: calc({getPresetPosition(preset.value)}% - 2px)"
-						></div>
-					{/each}
-				</div>
 			</div>
 			<span class="text-sm font-mono font-semibold text-accent-start w-10 text-right">
 				{images.settings.quality}%
