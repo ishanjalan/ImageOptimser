@@ -86,8 +86,17 @@ async function compressImage(item: ImageItem) {
 			// SVG to SVG - use SVGO
 			compressedBlob = await optimizeSvg(item.file);
 			images.updateItem(item.id, { progress: 90 });
+		} else if (item.format === 'gif' && outputFormat === 'webp') {
+			// GIF to WebP - use canvas to convert (note: only captures first frame of animated GIFs)
+			// For full animated WebP support, we'd need FFmpeg.wasm
+			images.updateItem(item.id, { progress: 20 });
+			const imageData = await decodeWithCanvas(item.file);
+			images.updateItem(item.id, { progress: 50 });
+			const encodedBuffer = await webpEncode!(imageData, { quality });
+			images.updateItem(item.id, { progress: 90 });
+			compressedBlob = new Blob([encodedBuffer], { type: 'image/webp' });
 		} else if (item.format === 'gif' && outputFormat === 'gif') {
-			// GIF to GIF - pass through (no WASM codec available)
+			// GIF to GIF - pass through (preserves animation)
 			compressedBlob = item.file;
 			images.updateItem(item.id, { progress: 90 });
 		} else {

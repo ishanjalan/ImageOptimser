@@ -104,10 +104,10 @@ function createImagesStore() {
 
 			const format = getFormatFromMime(file.type);
 			// SVG always stays as SVG (can't convert to raster without quality loss)
-			// GIF stays as GIF unless explicitly changed (preserves animation)
+			// GIF converts to WebP by default (smaller file size)
 			const outputFormat = 
 				format === 'svg' ? 'svg' :
-				format === 'gif' ? 'gif' :
+				format === 'gif' ? 'webp' :
 				settings.outputFormat === 'same' ? format : settings.outputFormat;
 
 				newItems.push({
