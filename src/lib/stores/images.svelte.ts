@@ -52,7 +52,7 @@ function saveSettings(settings: CompressionSettings) {
 function getDefaultSettings(): CompressionSettings {
 	return {
 		quality: 75, // "Web" preset - optimal for web, Android, iOS
-		outputFormat: 'same',
+		outputFormat: 'webp', // Best compression + universal support (web, Android, iOS 14+)
 		stripMetadata: true
 	};
 }
@@ -102,8 +102,13 @@ function createImagesStore() {
 			for (const file of files) {
 				if (!validTypes.includes(file.type)) continue;
 
-				const format = getFormatFromMime(file.type);
-				const outputFormat = settings.outputFormat === 'same' ? format : settings.outputFormat;
+			const format = getFormatFromMime(file.type);
+			// SVG always stays as SVG (can't convert to raster without quality loss)
+			// GIF stays as GIF unless explicitly changed (preserves animation)
+			const outputFormat = 
+				format === 'svg' ? 'svg' :
+				format === 'gif' ? 'gif' :
+				settings.outputFormat === 'same' ? format : settings.outputFormat;
 
 				newItems.push({
 					id: generateId(),
@@ -147,18 +152,18 @@ function createImagesStore() {
 			settings = { ...settings, ...newSettings };
 			saveSettings(settings);
 
-			// Update output format for pending items
-			if (newSettings.outputFormat !== undefined) {
-				items = items.map((item) => {
-					if (item.status === 'pending') {
-						return {
-							...item,
-							outputFormat: newSettings.outputFormat === 'same' ? item.format : newSettings.outputFormat!
-						};
-					}
-					return item;
-				});
-			}
+		// Update output format for pending items (except SVG/GIF which are locked)
+		if (newSettings.outputFormat !== undefined) {
+			items = items.map((item) => {
+				if (item.status === 'pending' && item.format !== 'svg' && item.format !== 'gif') {
+					return {
+						...item,
+						outputFormat: newSettings.outputFormat === 'same' ? item.format : newSettings.outputFormat!
+					};
+				}
+				return item;
+			});
+		}
 		},
 
 		getItemById(id: string) {

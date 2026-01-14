@@ -162,38 +162,46 @@
 						{item.format}
 					</span>
 					<ArrowRight class="h-3 w-3 text-surface-300" />
-					<div class="relative">
-						<button
-							onclick={() => showFormatMenu = !showFormatMenu}
-							class="flex items-center gap-1 rounded-md bg-gradient-to-r {getCurrentFormatColor()} px-2 py-0.5 text-[10px] font-bold uppercase text-white transition-all hover:opacity-90"
-						>
-							{item.outputFormat}
-							<ChevronDown class="h-3 w-3" />
-						</button>
-						
-						{#if showFormatMenu}
+					{#if item.format === 'svg'}
+						<!-- SVG is locked - show static badge -->
+						<span class="rounded-md bg-gradient-to-r from-cyan-500 to-blue-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+							SVG
+						</span>
+					{:else}
+						<!-- Format dropdown for raster/GIF images -->
+						<div class="relative">
 							<button
-								class="fixed inset-0 z-40 cursor-default"
-								onclick={() => showFormatMenu = false}
-								aria-label="Close menu"
-							></button>
-							<div
-								class="absolute left-0 bottom-full z-50 mb-1 min-w-[100px] overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
-								in:scale={{ duration: 150, start: 0.95 }}
-								out:fade={{ duration: 100 }}
+								onclick={() => showFormatMenu = !showFormatMenu}
+								class="flex items-center gap-1 rounded-md bg-gradient-to-r {getCurrentFormatColor()} px-2 py-0.5 text-[10px] font-bold uppercase text-white transition-all hover:opacity-90"
 							>
-								{#each outputOptions as format}
-									<button
-										onclick={() => handleFormatChange(format.value)}
-										class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
-									>
-										<span class="h-2 w-2 rounded-full bg-gradient-to-r {format.color}"></span>
-										<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
-									</button>
-								{/each}
-							</div>
-						{/if}
-					</div>
+								{item.outputFormat}
+								<ChevronDown class="h-3 w-3" />
+							</button>
+							
+							{#if showFormatMenu}
+								<button
+									class="fixed inset-0 z-40 cursor-default"
+									onclick={() => showFormatMenu = false}
+									aria-label="Close menu"
+								></button>
+								<div
+									class="absolute left-0 bottom-full z-50 mb-1 min-w-[100px] overflow-hidden rounded-lg bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
+									in:scale={{ duration: 150, start: 0.95 }}
+									out:fade={{ duration: 100 }}
+								>
+									{#each outputOptions as format}
+										<button
+											onclick={() => handleFormatChange(format.value)}
+											class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
+										>
+											<span class="h-2 w-2 rounded-full bg-gradient-to-r {format.color}"></span>
+											<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/if}
 				</div>
 
 				<!-- Action buttons -->
