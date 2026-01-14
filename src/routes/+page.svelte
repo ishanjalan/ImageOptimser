@@ -4,10 +4,14 @@
 	import DropZone from '$lib/components/DropZone.svelte';
 	import ImageList from '$lib/components/ImageList.svelte';
 	import Settings from '$lib/components/Settings.svelte';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { images } from '$lib/stores/images.svelte';
+	import { processImages } from '$lib/utils/compress';
 	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, Command, ArrowDown } from 'lucide-svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
 	import { fade, fly } from 'svelte/transition';
+
+	let showClearConfirm = $state(false);
 
 	const hasImages = $derived(images.items.length > 0);
 	const completedCount = $derived(images.items.filter((i) => i.status === 'completed').length);
@@ -50,7 +54,33 @@
 			handleDownloadAll();
 		}
 		if (e.key === 'Escape' && hasImages) {
-			images.clearAll();
+			showClearConfirm = true;
+		}
+	}
+
+	// Paste from clipboard
+	async function handlePaste(e: ClipboardEvent) {
+		const items = e.clipboardData?.items;
+		if (!items) return;
+
+		const imageFiles: File[] = [];
+		for (const item of items) {
+			if (item.type.startsWith('image/')) {
+				const file = item.getAsFile();
+				if (file) {
+					// Create a new file with a proper name for pasted images
+					const ext = file.type.split('/')[1] || 'png';
+					const namedFile = new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
+					imageFiles.push(namedFile);
+				}
+			}
+		}
+
+		if (imageFiles.length > 0) {
+			const newItems = images.addFiles(imageFiles);
+			if (newItems.length > 0) {
+				await processImages(newItems.map((i) => i.id));
+			}
 		}
 	}
 
@@ -73,7 +103,7 @@
 	];
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} onpaste={handlePaste} />
 
 <div class="flex min-h-screen flex-col">
 	<Header />
@@ -180,14 +210,14 @@
 								<span class="sm:hidden">ZIP</span>
 							</button>
 						{/if}
-						<button
-							onclick={() => images.clearAll()}
-							class="flex items-center gap-2 rounded-xl bg-surface-100 px-4 py-2 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-							title="Press Escape to clear"
-						>
-							<Trash2 class="h-4 w-4" />
-							<span class="hidden sm:inline">Clear All</span>
-						</button>
+					<button
+						onclick={() => showClearConfirm = true}
+						class="flex items-center gap-2 rounded-xl bg-surface-100 px-4 py-2 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+						title="Press Escape to clear"
+					>
+						<Trash2 class="h-4 w-4" />
+						<span class="hidden sm:inline">Clear All</span>
+					</button>
 					</div>
 				</div>
 			{/if}
@@ -236,3 +266,16 @@
 
 	<Footer />
 </div>
+
+<!-- Clear All Confirmation Modal -->
+<ConfirmModal
+	open={showClearConfirm}
+	title="Clear all images?"
+	message="This will remove all {images.items.length} images from the list. This action cannot be undone."
+	confirmText="Clear All"
+	onconfirm={() => {
+		images.clearAll();
+		showClearConfirm = false;
+	}}
+	oncancel={() => showClearConfirm = false}
+/>

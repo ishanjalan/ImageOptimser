@@ -2,12 +2,16 @@
 	import { images, type ImageItem, type ImageFormat } from '$lib/stores/images.svelte';
 	import { downloadImage } from '$lib/utils/download';
 	import { reprocessImage } from '$lib/utils/compress';
-	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, RefreshCw, ChevronDown } from 'lucide-svelte';
+	import CompareSlider from './CompareSlider.svelte';
+	import PreviewModal from './PreviewModal.svelte';
+	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, RefreshCw, ChevronDown, RotateCcw, SplitSquareHorizontal } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
 
 	let { item }: { item: ImageItem } = $props();
 
 	let showFormatMenu = $state(false);
+	let showCompare = $state(false);
+	let showPreview = $state(false);
 
 	const savings = $derived(
 		item.compressedSize ? Math.round((1 - item.compressedSize / item.originalSize) * 100) : 0
@@ -55,6 +59,10 @@
 		}
 	}
 
+	async function handleRetry() {
+		await reprocessImage(item.id, item.outputFormat);
+	}
+
 	function getCurrentFormatColor() {
 		const format = outputOptions.find(f => f.value === item.outputFormat);
 		return format?.color || 'from-gray-500 to-gray-600';
@@ -77,7 +85,11 @@
 
 	<div class="flex gap-4 p-4">
 		<!-- Thumbnail -->
-		<div class="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-surface-100 dark:bg-surface-800">
+		<button
+			onclick={() => showPreview = true}
+			class="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl bg-surface-100 dark:bg-surface-800 cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-accent-start focus:ring-offset-2"
+			aria-label="Preview image"
+		>
 			<img
 				src={item.compressedUrl || item.originalUrl}
 				alt={item.name}
@@ -88,7 +100,7 @@
 					<Loader2 class="h-6 w-6 text-white animate-spin" />
 				</div>
 			{/if}
-		</div>
+		</button>
 
 		<!-- Info -->
 		<div class="flex flex-1 flex-col justify-center min-w-0">
@@ -135,9 +147,18 @@
 					{/if}
 				</div>
 			{:else if item.status === 'error'}
-				<div class="mt-1 flex items-center gap-1.5 text-xs text-red-500">
-					<AlertCircle class="h-3.5 w-3.5" />
-					<span>{item.error || 'Compression failed'}</span>
+				<div class="mt-1 flex items-center gap-2">
+					<div class="flex items-center gap-1.5 text-xs text-red-500">
+						<AlertCircle class="h-3.5 w-3.5" />
+						<span>{item.error || 'Compression failed'}</span>
+					</div>
+					<button
+						onclick={handleRetry}
+						class="flex items-center gap-1 rounded-lg bg-red-100 px-2 py-1 text-xs font-medium text-red-600 transition-all hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+					>
+						<RotateCcw class="h-3 w-3" />
+						Retry
+					</button>
 				</div>
 			{/if}
 
@@ -196,9 +217,19 @@
 			</div>
 		</div>
 
-		<!-- Download button -->
+		<!-- Action buttons -->
 		{#if item.status === 'completed'}
-			<div class="flex items-center">
+			<div class="flex items-center gap-2">
+				<!-- Compare button -->
+				<button
+					onclick={() => showCompare = true}
+					class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-100 text-surface-600 transition-all hover:bg-surface-200 hover:scale-110 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-surface-700"
+					aria-label="Compare original vs compressed"
+					title="Compare"
+				>
+					<SplitSquareHorizontal class="h-5 w-5" />
+				</button>
+				<!-- Download button -->
 				<button
 					onclick={handleDownload}
 					class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-accent-start to-accent-end text-white shadow-lg shadow-accent-start/30 transition-all hover:scale-110 hover:shadow-xl"
@@ -210,3 +241,12 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Compare Slider Modal -->
+{#if showCompare && item.compressedUrl}
+	<CompareSlider
+		originalUrl={item.originalUrl}
+		compressedUrl={item.compressedUrl}
+		onclose={() => showCompare = false}
+	/>
+{/if}

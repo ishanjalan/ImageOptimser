@@ -20,14 +20,52 @@ export interface ImageItem {
 export interface CompressionSettings {
 	quality: number;
 	outputFormat: 'same' | ImageFormat;
+	maxWidth?: number;
+	maxHeight?: number;
+	resizeEnabled: boolean;
+	stripMetadata: boolean;
+}
+
+const SETTINGS_KEY = 'squishan-settings';
+
+function loadSettings(): CompressionSettings {
+	if (typeof localStorage === 'undefined') {
+		return getDefaultSettings();
+	}
+	try {
+		const saved = localStorage.getItem(SETTINGS_KEY);
+		if (saved) {
+			return { ...getDefaultSettings(), ...JSON.parse(saved) };
+		}
+	} catch (e) {
+		console.warn('Failed to load settings from localStorage:', e);
+	}
+	return getDefaultSettings();
+}
+
+function saveSettings(settings: CompressionSettings) {
+	if (typeof localStorage === 'undefined') return;
+	try {
+		localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+	} catch (e) {
+		console.warn('Failed to save settings to localStorage:', e);
+	}
+}
+
+function getDefaultSettings(): CompressionSettings {
+	return {
+		quality: 80,
+		outputFormat: 'same',
+		maxWidth: undefined,
+		maxHeight: undefined,
+		resizeEnabled: false,
+		stripMetadata: true
+	};
 }
 
 function createImagesStore() {
 	let items = $state<ImageItem[]>([]);
-	let settings = $state<CompressionSettings>({
-		quality: 80,
-		outputFormat: 'same'
-	});
+	let settings = $state<CompressionSettings>(loadSettings());
 
 	function getFormatFromMime(mimeType: string): ImageFormat {
 		const map: Record<string, ImageFormat> = {
@@ -113,6 +151,7 @@ function createImagesStore() {
 
 		updateSettings(newSettings: Partial<CompressionSettings>) {
 			settings = { ...settings, ...newSettings };
+			saveSettings(settings);
 
 			// Update output format for pending items
 			if (newSettings.outputFormat !== undefined) {
@@ -130,6 +169,18 @@ function createImagesStore() {
 
 		getItemById(id: string) {
 			return items.find((i) => i.id === id);
+		},
+
+		reorderItems(draggedId: string, targetId: string) {
+			const draggedIndex = items.findIndex((i) => i.id === draggedId);
+			const targetIndex = items.findIndex((i) => i.id === targetId);
+
+			if (draggedIndex === -1 || targetIndex === -1) return;
+
+			const newItems = [...items];
+			const [draggedItem] = newItems.splice(draggedIndex, 1);
+			newItems.splice(targetIndex, 0, draggedItem);
+			items = newItems;
 		}
 	};
 }
