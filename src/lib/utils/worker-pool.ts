@@ -9,6 +9,7 @@ export interface CompressionJob {
 	inputFormat: ImageFormat;
 	outputFormat: ImageFormat;
 	quality: number;
+	lossless: boolean;
 	onProgress?: (progress: number) => void;
 	onComplete: (result: ArrayBuffer, mimeType: string) => void;
 	onError: (error: string) => void;
@@ -174,7 +175,8 @@ function assignJobToWorker(poolWorker: PoolWorker, job: CompressionJob): void {
 		imageBuffer: job.imageBuffer,
 		inputFormat: job.inputFormat,
 		outputFormat: job.outputFormat,
-		quality: job.quality
+		quality: job.quality,
+		lossless: job.lossless
 	};
 
 	// Transfer the buffer to the worker for better performance
@@ -207,6 +209,7 @@ export function processImage(
 	inputFormat: ImageFormat,
 	outputFormat: ImageFormat,
 	quality: number,
+	lossless: boolean,
 	onProgress?: (progress: number) => void
 ): Promise<{ result: ArrayBuffer; mimeType: string }> {
 	return new Promise((resolve, reject) => {
@@ -216,6 +219,7 @@ export function processImage(
 			inputFormat,
 			outputFormat,
 			quality,
+			lossless,
 			onProgress,
 			onComplete: (result, mimeType) => resolve({ result, mimeType }),
 			onError: (error) => reject(new Error(error))

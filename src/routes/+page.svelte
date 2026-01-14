@@ -77,7 +77,7 @@
 		}
 
 		if (imageFiles.length > 0) {
-			const newItems = images.addFiles(imageFiles);
+			const newItems = await images.addFiles(imageFiles);
 			if (newItems.length > 0) {
 				await processImages(newItems.map((i) => i.id));
 			}

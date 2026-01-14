@@ -116,7 +116,7 @@
 	<!-- Info section -->
 	<div class="p-4">
 		<!-- Filename + Size -->
-		<div class="flex items-center justify-between gap-3 mb-3">
+		<div class="flex items-center justify-between gap-3 mb-1">
 			<p class="truncate text-sm font-medium text-surface-900 dark:text-surface-100" title={item.name}>
 				{item.name}
 			</p>
@@ -126,6 +126,12 @@
 				</span>
 			{/if}
 		</div>
+		<!-- Dimensions -->
+		{#if item.width && item.height}
+			<p class="text-xs text-surface-400 mb-3">{item.width} × {item.height}</p>
+		{:else}
+			<div class="mb-3"></div>
+		{/if}
 
 		<!-- Status / Progress -->
 		{#if item.status === 'pending'}

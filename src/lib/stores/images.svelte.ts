@@ -15,12 +15,15 @@ export interface ImageItem {
 	status: ImageStatus;
 	progress: number;
 	error?: string;
+	width?: number;
+	height?: number;
 }
 
 export interface CompressionSettings {
 	quality: number;
 	outputFormat: 'same' | ImageFormat;
 	stripMetadata: boolean;
+	lossless: boolean;
 }
 
 const SETTINGS_KEY = 'squishan-settings';
@@ -53,8 +56,26 @@ function getDefaultSettings(): CompressionSettings {
 	return {
 		quality: 75, // "Web" preset - optimal for web, Android, iOS
 		outputFormat: 'webp', // Best compression + universal support (web, Android, iOS 14+)
-		stripMetadata: true
+		stripMetadata: true,
+		lossless: false
 	};
+}
+
+// Extract dimensions from an image file
+async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		const url = URL.createObjectURL(file);
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			resolve({ width: img.naturalWidth, height: img.naturalHeight });
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error('Failed to load image dimensions'));
+		};
+		img.src = url;
+	});
 }
 
 function createImagesStore() {
@@ -85,7 +106,7 @@ function createImagesStore() {
 			return settings;
 		},
 
-		addFiles(files: FileList | File[]) {
+		async addFiles(files: FileList | File[]) {
 			const validTypes = [
 				'image/jpeg',
 				'image/jpg',
@@ -100,11 +121,22 @@ function createImagesStore() {
 			for (const file of files) {
 				if (!validTypes.includes(file.type)) continue;
 
-			const format = getFormatFromMime(file.type);
-			// SVG always stays as SVG (can't convert to raster without quality loss)
-			const outputFormat = 
-				format === 'svg' ? 'svg' :
-				settings.outputFormat === 'same' ? format : settings.outputFormat;
+				const format = getFormatFromMime(file.type);
+				// SVG always stays as SVG (can't convert to raster without quality loss)
+				const outputFormat = 
+					format === 'svg' ? 'svg' :
+					settings.outputFormat === 'same' ? format : settings.outputFormat;
+
+				// Get dimensions asynchronously
+				let width: number | undefined;
+				let height: number | undefined;
+				try {
+					const dims = await getImageDimensions(file);
+					width = dims.width;
+					height = dims.height;
+				} catch (e) {
+					console.warn('Failed to get dimensions for', file.name);
+				}
 
 				newItems.push({
 					id: generateId(),
@@ -115,7 +147,9 @@ function createImagesStore() {
 					format,
 					outputFormat,
 					status: 'pending',
-					progress: 0
+					progress: 0,
+					width,
+					height
 				});
 			}
 
@@ -148,18 +182,18 @@ function createImagesStore() {
 			settings = { ...settings, ...newSettings };
 			saveSettings(settings);
 
-		// Update output format for pending items (except SVG/GIF which are locked)
-		if (newSettings.outputFormat !== undefined) {
-			items = items.map((item) => {
-				if (item.status === 'pending' && item.format !== 'svg' && item.format !== 'gif') {
-					return {
-						...item,
-						outputFormat: newSettings.outputFormat === 'same' ? item.format : newSettings.outputFormat!
-					};
-				}
-				return item;
-			});
-		}
+			// Update output format for pending items (except SVG which is locked)
+			if (newSettings.outputFormat !== undefined) {
+				items = items.map((item) => {
+					if (item.status === 'pending' && item.format !== 'svg') {
+						return {
+							...item,
+							outputFormat: newSettings.outputFormat === 'same' ? item.format : newSettings.outputFormat!
+						};
+					}
+					return item;
+				});
+			}
 		},
 
 		getItemById(id: string) {

@@ -42,7 +42,7 @@
 
 		const files = e.dataTransfer?.files;
 		if (files && files.length > 0) {
-			const newItems = images.addFiles(files);
+			const newItems = await images.addFiles(files);
 			if (newItems.length > 0) {
 				await processImages(newItems.map((i) => i.id));
 			}
@@ -53,7 +53,7 @@
 		const input = e.target as HTMLInputElement;
 		const files = input.files;
 		if (files && files.length > 0) {
-			const newItems = images.addFiles(files);
+			const newItems = await images.addFiles(files);
 			if (newItems.length > 0) {
 				await processImages(newItems.map((i) => i.id));
 			}

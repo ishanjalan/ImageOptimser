@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { images, type ImageFormat } from '$lib/stores/images.svelte';
 	import { reprocessAllImages } from '$lib/utils/compress';
-	import { Settings2, Shield, RefreshCw } from 'lucide-svelte';
+	import { Settings2, Shield, RefreshCw, Sparkles } from 'lucide-svelte';
 
 	const formats: { value: 'same' | ImageFormat; label: string }[] = [
 		{ value: 'same', label: 'Original' },
@@ -22,6 +22,7 @@
 
 	let isReprocessing = $state(false);
 	const hasCompletedImages = $derived(images.items.some(i => i.status === 'completed'));
+	const isLossless = $derived(images.settings.lossless);
 
 	function handlePresetClick(value: number) {
 		images.updateSettings({ quality: value });
@@ -35,6 +36,10 @@
 		images.updateSettings({ stripMetadata: !images.settings.stripMetadata });
 	}
 
+	function handleLosslessToggle() {
+		images.updateSettings({ lossless: !images.settings.lossless });
+	}
+
 	async function handleReoptimizeAll() {
 		isReprocessing = true;
 		await reprocessAllImages();
@@ -46,29 +51,31 @@
 
 <div class="glass mb-6 sm:mb-8 rounded-2xl p-4 sm:p-6">
 	<div class="flex flex-wrap items-center gap-x-6 gap-y-4 lg:gap-x-8">
-		<!-- Quality Presets -->
-		<div class="flex items-center gap-3">
-			<span class="text-sm font-medium text-surface-400 uppercase tracking-wide">Quality</span>
-			<div class="flex gap-1.5">
-				{#each presets as preset}
-					<button
-						onclick={() => handlePresetClick(preset.value)}
-						class="px-3 py-1.5 text-sm font-medium rounded-lg transition-all {images.settings.quality === preset.value
-							? 'bg-accent-start text-white shadow-md shadow-accent-start/30'
-							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
-						title="{preset.desc} ({preset.value}%)"
-					>
-						{preset.label}
-					</button>
-				{/each}
+		<!-- Quality Presets - Hidden when lossless is enabled -->
+		{#if !isLossless}
+			<div class="flex items-center gap-3">
+				<span class="text-sm font-medium text-surface-400 uppercase tracking-wide">Quality</span>
+				<div class="flex gap-1.5">
+					{#each presets as preset}
+						<button
+							onclick={() => handlePresetClick(preset.value)}
+							class="px-3 py-1.5 text-sm font-medium rounded-lg transition-all {images.settings.quality === preset.value
+								? 'bg-accent-start text-white shadow-md shadow-accent-start/30'
+								: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
+							title="{preset.desc} ({preset.value}%)"
+						>
+							{preset.label}
+						</button>
+					{/each}
+				</div>
+				{#if currentPreset}
+					<span class="text-xs text-surface-500 tabular-nums">{currentPreset.value}%</span>
+				{/if}
 			</div>
-			{#if currentPreset}
-				<span class="text-xs text-surface-500 tabular-nums">{currentPreset.value}%</span>
-			{/if}
-		</div>
 
-		<!-- Divider -->
-		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
+			<!-- Divider -->
+			<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
+		{/if}
 
 		<!-- Output Format -->
 		<div class="flex items-center gap-3">
@@ -86,6 +93,26 @@
 				{/each}
 			</div>
 		</div>
+
+		<!-- Divider -->
+		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
+
+		<!-- Lossless Toggle -->
+		<button
+			onclick={handleLosslessToggle}
+			class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all {isLossless ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 hover:bg-surface-700/50'}"
+			title={isLossless ? 'Lossless encoding (no quality loss)' : 'Lossy encoding (smaller files)'}
+		>
+			<Sparkles class="h-4 w-4" />
+			<span class="text-sm font-medium">Lossless</span>
+			<div
+				class="relative h-5 w-9 rounded-full transition-colors {isLossless ? 'bg-accent-start' : 'bg-surface-600'}"
+			>
+				<span
+					class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform {isLossless ? 'translate-x-4' : 'translate-x-0'}"
+				></span>
+			</div>
+		</button>
 
 		<!-- Divider -->
 		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>

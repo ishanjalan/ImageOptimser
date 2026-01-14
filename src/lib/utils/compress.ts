@@ -51,6 +51,7 @@ async function compressImage(item: ImageItem) {
 		images.updateItem(item.id, { status: 'processing', progress: 10 });
 
 		const quality = images.settings.quality;
+		const lossless = images.settings.lossless;
 		const outputFormat = item.outputFormat;
 
 		let compressedBlob: Blob;
@@ -69,6 +70,7 @@ async function compressImage(item: ImageItem) {
 				item.format,
 				outputFormat,
 				quality,
+				lossless,
 				(progress) => {
 					images.updateItem(item.id, { progress });
 				}
@@ -113,17 +115,6 @@ async function optimizeSvg(file: File): Promise<Blob> {
 	});
 
 	return new Blob([result.data], { type: 'image/svg+xml' });
-}
-
-function getMimeType(format: ImageFormat): string {
-	const map: Record<ImageFormat, string> = {
-		jpeg: 'image/jpeg',
-		png: 'image/png',
-		webp: 'image/webp',
-		avif: 'image/avif',
-		svg: 'image/svg+xml'
-	};
-	return map[format];
 }
 
 export function getOutputExtension(format: ImageFormat): string {

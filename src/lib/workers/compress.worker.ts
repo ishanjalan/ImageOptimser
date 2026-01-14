@@ -10,6 +10,7 @@ export interface WorkerRequest {
 	inputFormat: ImageFormat;
 	outputFormat: ImageFormat;
 	quality: number;
+	lossless: boolean;
 }
 
 export interface WorkerResponse {
@@ -27,9 +28,9 @@ let jpegDecode: ((data: ArrayBuffer) => Promise<ImageData>) | null = null;
 let pngEncode: ((data: ImageData) => Promise<ArrayBuffer>) | null = null;
 let pngDecode: ((data: ArrayBuffer) => Promise<ImageData>) | null = null;
 let oxipngOptimize: ((data: ArrayBuffer, options?: { level?: number }) => Promise<ArrayBuffer>) | null = null;
-let webpEncode: ((data: ImageData, options?: { quality?: number }) => Promise<ArrayBuffer>) | null = null;
+let webpEncode: ((data: ImageData, options?: { quality?: number; lossless?: number }) => Promise<ArrayBuffer>) | null = null;
 let webpDecode: ((data: ArrayBuffer) => Promise<ImageData>) | null = null;
-let avifEncode: ((data: ImageData, options?: { quality?: number; speed?: number }) => Promise<ArrayBuffer>) | null = null;
+let avifEncode: ((data: ImageData, options?: { quality?: number; speed?: number; lossless?: boolean }) => Promise<ArrayBuffer>) | null = null;
 let avifDecode: ((data: ArrayBuffer) => Promise<ImageData>) | null = null;
 
 let codecsInitialized = false;
@@ -76,16 +77,26 @@ async function decodeImage(buffer: ArrayBuffer, format: ImageFormat): Promise<Im
 }
 
 // Encode ImageData to target format
-async function encodeImage(imageData: ImageData, format: ImageFormat, quality: number): Promise<ArrayBuffer> {
+async function encodeImage(imageData: ImageData, format: ImageFormat, quality: number, lossless: boolean): Promise<ArrayBuffer> {
 	switch (format) {
 		case 'jpeg':
-			return await jpegEncode!(imageData, { quality });
+			// JPEG doesn't support lossless - use max quality (100) when lossless is requested
+			return await jpegEncode!(imageData, { quality: lossless ? 100 : quality });
 		case 'png':
+			// PNG is always lossless - use higher optimization level for lossless mode
 			const pngBuffer = await pngEncode!(imageData);
-			return await oxipngOptimize!(pngBuffer, { level: 2 });
+			return await oxipngOptimize!(pngBuffer, { level: lossless ? 4 : 2 });
 		case 'webp':
+			// WebP lossless mode: lossless=1 means lossless encoding
+			if (lossless) {
+				return await webpEncode!(imageData, { lossless: 1 });
+			}
 			return await webpEncode!(imageData, { quality });
 		case 'avif':
+			// AVIF lossless mode
+			if (lossless) {
+				return await avifEncode!(imageData, { lossless: true, speed: 4 });
+			}
 			return await avifEncode!(imageData, { quality, speed: 6 });
 		default:
 			throw new Error(`Unsupported output format: ${format}`);
@@ -112,7 +123,7 @@ function sendProgress(id: string, progress: number) {
 
 // Process compression request
 async function processCompression(request: WorkerRequest): Promise<void> {
-	const { id, imageBuffer, inputFormat, outputFormat, quality } = request;
+	const { id, imageBuffer, inputFormat, outputFormat, quality, lossless } = request;
 
 	try {
 		// Initialize codecs if needed
@@ -124,7 +135,7 @@ async function processCompression(request: WorkerRequest): Promise<void> {
 		sendProgress(id, 50);
 
 		// Encode to target format
-		const result = await encodeImage(imageData, outputFormat, quality);
+		const result = await encodeImage(imageData, outputFormat, quality, lossless);
 		sendProgress(id, 90);
 
 		// Send result back (transfer ownership for performance)
