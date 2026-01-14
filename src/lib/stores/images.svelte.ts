@@ -1,4 +1,4 @@
-export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'gif' | 'svg';
+export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg';
 export type ImageStatus = 'pending' | 'processing' | 'completed' | 'error';
 
 export interface ImageItem {
@@ -68,7 +68,6 @@ function createImagesStore() {
 			'image/png': 'png',
 			'image/webp': 'webp',
 			'image/avif': 'avif',
-			'image/gif': 'gif',
 			'image/svg+xml': 'svg'
 		};
 		return map[mimeType] || 'jpeg';
@@ -93,7 +92,6 @@ function createImagesStore() {
 				'image/png',
 				'image/webp',
 				'image/avif',
-				'image/gif',
 				'image/svg+xml'
 			];
 
@@ -104,10 +102,8 @@ function createImagesStore() {
 
 			const format = getFormatFromMime(file.type);
 			// SVG always stays as SVG (can't convert to raster without quality loss)
-			// GIF converts to WebP by default (smaller file size)
 			const outputFormat = 
 				format === 'svg' ? 'svg' :
-				format === 'gif' ? 'webp' :
 				settings.outputFormat === 'same' ? format : settings.outputFormat;
 
 				newItems.push({

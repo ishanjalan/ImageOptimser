@@ -132,7 +132,7 @@
 						<span class="text-surface-600 dark:text-surface-400">in seconds</span>
 					</h1>
 					<p class="mx-auto max-w-2xl text-sm text-surface-500 sm:text-base">
-						Compress JPEG, PNG, WebP, AVIF, GIF, and SVG with powerful algorithms.
+						Compress JPEG, PNG, WebP, AVIF, and SVG with powerful algorithms.
 						<span class="font-medium text-surface-700 dark:text-surface-300">100% private</span>
 						— everything runs in your browser.
 					</p>

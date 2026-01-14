@@ -29,9 +29,7 @@
 	const outputOptions = $derived(
 		item.format === 'svg'
 			? [{ value: 'svg' as ImageFormat, label: 'SVG', color: 'from-cyan-500 to-blue-500' }]
-			: item.format === 'gif'
-				? [{ value: 'gif' as ImageFormat, label: 'GIF', color: 'from-yellow-500 to-orange-500' }, ...availableFormats]
-				: availableFormats
+			: availableFormats
 	);
 
 	function formatBytes(bytes: number): string {

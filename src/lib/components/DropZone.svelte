@@ -6,7 +6,7 @@
 	let isDragging = $state(false);
 	let fileInput: HTMLInputElement;
 
-	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.gif,.svg';
+	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.svg';
 	const hasImages = $derived(images.items.length > 0);
 
 	const formats = [
@@ -14,7 +14,6 @@
 		{ name: 'PNG', color: 'from-blue-500 to-indigo-500' },
 		{ name: 'WebP', color: 'from-green-500 to-emerald-500' },
 		{ name: 'AVIF', color: 'from-purple-500 to-pink-500' },
-		{ name: 'GIF', color: 'from-yellow-500 to-orange-500' },
 		{ name: 'SVG', color: 'from-cyan-500 to-blue-500' }
 	];
 
