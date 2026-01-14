@@ -88,50 +88,51 @@
 		></div>
 	</div>
 
-	<main class="flex-1 px-6 pt-24 pb-8">
+	<main class="flex-1 px-6 pt-20 pb-6">
 		<div class="mx-auto max-w-6xl">
 			<!-- Hero Section -->
 			{#if !hasImages}
-				<div class="mb-8 text-center" in:fade={{ duration: 300 }}>
-					<div class="mb-4 inline-flex items-center gap-2 rounded-full bg-accent-start/10 px-4 py-1.5 text-sm font-medium text-accent-start">
-						<Sparkles class="h-4 w-4" />
+				<div class="mb-4 text-center" in:fade={{ duration: 300 }}>
+					<div class="mb-2 inline-flex items-center gap-2 rounded-full bg-accent-start/10 px-3 py-1 text-xs font-medium text-accent-start">
+						<Sparkles class="h-3 w-3" />
 						Free & Open Source
 					</div>
-					<h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+					<h1 class="mb-2 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
 						<span class="gradient-text">Optimize</span> your images
-						<br />
 						<span class="text-surface-600 dark:text-surface-400">in seconds</span>
 					</h1>
-					<p class="mx-auto max-w-2xl text-base text-surface-500 sm:text-lg md:text-xl">
+					<p class="mx-auto max-w-2xl text-sm text-surface-500 sm:text-base">
 						Compress JPEG, PNG, WebP, AVIF, GIF, and SVG with powerful algorithms.
 						<span class="font-medium text-surface-700 dark:text-surface-300">100% private</span>
 						— everything runs in your browser.
 					</p>
 
-					<!-- Feature Cards -->
-					<div class="mt-10 grid gap-4 sm:grid-cols-3">
+					<!-- Feature Cards - Inline -->
+					<div class="mt-5 grid gap-3 sm:grid-cols-3">
 						{#each features as feature, i}
 							<div
-								class="glass group rounded-2xl p-5 text-left transition-all hover:scale-[1.02]"
+								class="glass group flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-all hover:scale-[1.02]"
 								in:fly={{ y: 20, delay: 100 * i, duration: 300 }}
 							>
 								<div
-									class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-start/20 to-accent-end/20 text-accent-start transition-transform group-hover:scale-110"
+									class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent-start/20 to-accent-end/20 text-accent-start"
 								>
-									<feature.icon class="h-5 w-5" />
+									<feature.icon class="h-4 w-4" />
 								</div>
-								<h3 class="font-semibold text-surface-900 dark:text-surface-100">
-									{feature.title}
-								</h3>
-								<p class="mt-1 text-sm text-surface-500">{feature.description}</p>
+								<div>
+									<h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
+										{feature.title}
+									</h3>
+									<p class="text-xs text-surface-500">{feature.description}</p>
+								</div>
 							</div>
 						{/each}
 					</div>
 
 					<!-- Scroll hint -->
-					<div class="mt-8 flex flex-col items-center gap-2 text-surface-400">
+					<div class="mt-4 flex items-center justify-center gap-2 text-surface-400">
 						<span class="text-xs uppercase tracking-wider">Drop images below</span>
-						<ArrowDown class="h-4 w-4 animate-bounce" />
+						<ArrowDown class="h-3 w-3 animate-bounce" />
 					</div>
 				</div>
 			{/if}
