@@ -278,3 +278,42 @@ export async function reprocessImage(id: string, newFormat: ImageFormat) {
 		await compressImage(updatedItem);
 	}
 }
+
+// Re-process all completed images with current settings
+export async function reprocessAllImages() {
+	const completedItems = images.items.filter(i => i.status === 'completed');
+	
+	if (completedItems.length === 0) return;
+
+	// Reset all completed items to pending
+	for (const item of completedItems) {
+		if (item.compressedUrl) {
+			URL.revokeObjectURL(item.compressedUrl);
+		}
+		
+		// Determine output format based on settings
+		const outputFormat = images.settings.outputFormat === 'same' 
+			? item.format 
+			: images.settings.outputFormat;
+		
+		images.updateItem(item.id, {
+			outputFormat,
+			status: 'pending',
+			progress: 0,
+			compressedSize: undefined,
+			compressedUrl: undefined,
+			compressedBlob: undefined
+		});
+	}
+
+	// Initialize codecs
+	await initCodecs();
+
+	// Process all items
+	for (const item of completedItems) {
+		const updatedItem = images.getItemById(item.id);
+		if (updatedItem && updatedItem.status === 'pending') {
+			await compressImage(updatedItem);
+		}
+	}
+}

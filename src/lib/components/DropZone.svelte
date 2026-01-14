@@ -87,53 +87,69 @@
 		onchange={handleFileSelect}
 	/>
 
-	<div
-		class="group relative overflow-hidden rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer {isDragging
-			? 'border-accent-start bg-accent-start/5 scale-[1.02]'
-			: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700 dark:hover:border-accent-start/50'} {hasImages
-			? 'py-5'
-			: 'py-8'}"
-	>
-		<!-- Background pattern -->
+	{#if hasImages}
+		<!-- Compact dropzone when images exist -->
 		<div
-			class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
-			style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"
-		></div>
-
-		<div class="relative flex flex-col items-center justify-center px-6 text-center">
-			<!-- Icon -->
-			<div
-				class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 {isDragging
-					? 'bg-accent-start/20 scale-110 rotate-3'
-					: 'bg-surface-100 group-hover:bg-accent-start/10 dark:bg-surface-800 group-hover:scale-105'}"
-			>
+			class="group flex items-center justify-center gap-3 rounded-xl border-2 border-dashed py-3 px-4 transition-all duration-300 cursor-pointer {isDragging
+				? 'border-accent-start bg-accent-start/5'
+				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700'}"
+		>
+			<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-100 dark:bg-surface-800 transition-colors group-hover:bg-accent-start/10">
 				{#if isDragging}
-					<FileImage class="h-6 w-6 text-accent-start animate-pulse" />
+					<FileImage class="h-4 w-4 text-accent-start animate-pulse" />
 				{:else}
-					<Upload
-						class="h-6 w-6 text-surface-400 transition-all group-hover:text-accent-start group-hover:-translate-y-1"
-					/>
+					<Upload class="h-4 w-4 text-surface-400 group-hover:text-accent-start" />
 				{/if}
 			</div>
+			<p class="text-sm text-surface-500">
+				{#if isDragging}
+					<span class="font-medium text-accent-start">Release to add more</span>
+				{:else}
+					Drop more images or <span class="font-medium text-accent-start">click to browse</span>
+				{/if}
+			</p>
+		</div>
+	{:else}
+		<!-- Full dropzone when no images -->
+		<div
+			class="group relative overflow-hidden rounded-2xl border-2 border-dashed py-8 transition-all duration-300 cursor-pointer {isDragging
+				? 'border-accent-start bg-accent-start/5 scale-[1.02]'
+				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700 dark:hover:border-accent-start/50'}"
+		>
+			<!-- Background pattern -->
+			<div
+				class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+				style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"
+			></div>
 
-			<!-- Text -->
-			{#if isDragging}
-				<p class="font-semibold text-accent-start">Release to upload</p>
-				<p class="mt-0.5 text-sm text-accent-start/70">Your images are ready to be optimized</p>
-			{:else}
-				<p class="font-semibold text-surface-700 dark:text-surface-300">
-					{hasImages ? 'Add more images' : 'Drop images here'}
-				</p>
-				<p class="mt-0.5 text-sm text-surface-500">
-					or <span
-						class="font-medium text-accent-start underline-offset-2 hover:underline"
-						>click to browse</span
-					>
-				</p>
-			{/if}
+			<div class="relative flex flex-col items-center justify-center px-6 text-center">
+				<!-- Icon -->
+				<div
+					class="mb-3 flex h-12 w-12 items-center justify-center rounded-xl transition-all duration-300 {isDragging
+						? 'bg-accent-start/20 scale-110 rotate-3'
+						: 'bg-surface-100 group-hover:bg-accent-start/10 dark:bg-surface-800 group-hover:scale-105'}"
+				>
+					{#if isDragging}
+						<FileImage class="h-6 w-6 text-accent-start animate-pulse" />
+					{:else}
+						<Upload
+							class="h-6 w-6 text-surface-400 transition-all group-hover:text-accent-start group-hover:-translate-y-1"
+						/>
+					{/if}
+				</div>
 
-			<!-- Supported formats -->
-			{#if !hasImages}
+				<!-- Text -->
+				{#if isDragging}
+					<p class="font-semibold text-accent-start">Release to upload</p>
+					<p class="mt-0.5 text-sm text-accent-start/70">Your images are ready to be optimized</p>
+				{:else}
+					<p class="font-semibold text-surface-700 dark:text-surface-300">Drop images here</p>
+					<p class="mt-0.5 text-sm text-surface-500">
+						or <span class="font-medium text-accent-start underline-offset-2 hover:underline">click to browse</span>
+					</p>
+				{/if}
+
+				<!-- Supported formats -->
 				<div class="mt-4 flex flex-wrap items-center justify-center gap-1.5">
 					{#each formats as format}
 						<span
@@ -146,7 +162,7 @@
 				<p class="mt-3 text-xs text-surface-400">
 					Max file size: Unlimited • Batch upload supported
 				</p>
-			{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>

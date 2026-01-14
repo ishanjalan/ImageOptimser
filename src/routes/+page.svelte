@@ -7,7 +7,7 @@
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { processImages } from '$lib/utils/compress';
-	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, Command, ArrowDown } from 'lucide-svelte';
+	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown } from 'lucide-svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
 	import { fade, fly } from 'svelte/transition';
 
@@ -233,33 +233,6 @@
 			<!-- Image List -->
 			{#if hasImages}
 				<ImageList />
-			{/if}
-
-			<!-- Keyboard Shortcuts Hint -->
-			{#if hasImages && completedCount > 0}
-				<div
-					class="mt-6 flex flex-wrap justify-center gap-4 text-xs text-surface-400"
-					in:fade={{ duration: 200, delay: 300 }}
-				>
-					<div class="flex items-center gap-1.5">
-						<kbd
-							class="flex h-5 items-center gap-0.5 rounded bg-surface-200 px-1.5 font-mono text-[10px] dark:bg-surface-800"
-						>
-							<Command class="h-3 w-3" />
-							<span>⇧</span>
-							<span>D</span>
-						</kbd>
-						<span>Download all</span>
-					</div>
-					<div class="flex items-center gap-1.5">
-						<kbd
-							class="flex h-5 items-center rounded bg-surface-200 px-1.5 font-mono text-[10px] dark:bg-surface-800"
-						>
-							Esc
-						</kbd>
-						<span>Clear all</span>
-					</div>
-				</div>
 			{/if}
 		</div>
 	</main>

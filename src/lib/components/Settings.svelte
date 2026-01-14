@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { images, type ImageFormat } from '$lib/stores/images.svelte';
-	import { Settings2, Shield } from 'lucide-svelte';
+	import { reprocessAllImages } from '$lib/utils/compress';
+	import { Settings2, Shield, RefreshCw } from 'lucide-svelte';
 
 	const formats: { value: 'same' | ImageFormat; label: string }[] = [
 		{ value: 'same', label: 'Original' },
@@ -15,6 +16,11 @@
 		{ label: 'Social', value: 85 },
 		{ label: 'High', value: 95 }
 	];
+
+	let isReprocessing = $state(false);
+
+	// Check if any completed images were processed with different settings
+	const hasCompletedImages = $derived(images.items.some(i => i.status === 'completed'));
 
 	function handleQualityChange(e: Event) {
 		const value = parseInt((e.target as HTMLInputElement).value);
@@ -31,6 +37,12 @@
 
 	function handleMetadataToggle() {
 		images.updateSettings({ stripMetadata: !images.settings.stripMetadata });
+	}
+
+	async function handleReoptimizeAll() {
+		isReprocessing = true;
+		await reprocessAllImages();
+		isReprocessing = false;
 	}
 
 	// Calculate slider position percentage for preset markers
@@ -105,7 +117,7 @@
 			title={images.settings.stripMetadata ? 'EXIF data will be removed' : 'EXIF data will be preserved'}
 		>
 			<Shield class="h-3.5 w-3.5" />
-			<span class="font-medium">Strip EXIF</span>
+			<span class="font-medium hidden sm:inline">Strip EXIF</span>
 			<div
 				class="relative h-4 w-7 rounded-full transition-colors {images.settings.stripMetadata ? 'bg-accent-start' : 'bg-surface-600'}"
 			>
@@ -114,5 +126,21 @@
 				></span>
 			</div>
 		</button>
+
+		<!-- Divider -->
+		{#if hasCompletedImages}
+			<div class="hidden md:block w-px h-6 bg-surface-700"></div>
+
+			<!-- Re-optimize All Button -->
+			<button
+				onclick={handleReoptimizeAll}
+				disabled={isReprocessing}
+				class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-accent-start/10 text-accent-start hover:bg-accent-start/20 transition-all disabled:opacity-50"
+				title="Re-optimize all images with current settings"
+			>
+				<RefreshCw class="h-3.5 w-3.5 {isReprocessing ? 'animate-spin' : ''}" />
+				<span>{isReprocessing ? 'Optimizing...' : 'Re-optimize All'}</span>
+			</button>
+		{/if}
 	</div>
 </div>
