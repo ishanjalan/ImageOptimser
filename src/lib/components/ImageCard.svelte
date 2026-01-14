@@ -83,9 +83,9 @@
 
 	<!-- Thumbnail - larger, clickable -->
 	<button
-		onclick={() => showPreview = true}
+		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : showPreview = true}
 		class="relative w-full aspect-video overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
-		aria-label="Preview image"
+		aria-label="Compare or preview image"
 	>
 		<img
 			src={item.compressedUrl || item.originalUrl}
