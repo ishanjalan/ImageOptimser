@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { images, type ImageFormat } from '$lib/stores/images.svelte';
-	import { Settings2, Sliders, Shield, Zap } from 'lucide-svelte';
+	import { Settings2, Shield } from 'lucide-svelte';
 
 	const formats: { value: 'same' | ImageFormat; label: string }[] = [
-		{ value: 'same', label: 'Keep Original' },
+		{ value: 'same', label: 'Original' },
 		{ value: 'jpeg', label: 'JPEG' },
 		{ value: 'png', label: 'PNG' },
 		{ value: 'webp', label: 'WebP' },
 		{ value: 'avif', label: 'AVIF' }
 	];
 
-	const qualityPresets = [
-		{ label: 'Web', value: 75, description: 'Best for websites' },
-		{ label: 'Social', value: 85, description: 'Social media' },
-		{ label: 'High', value: 95, description: 'Maximum quality' }
+	const presets = [
+		{ label: 'Web', value: 75 },
+		{ label: 'Social', value: 85 },
+		{ label: 'High', value: 95 }
 	];
 
 	function handleQualityChange(e: Event) {
@@ -21,93 +21,80 @@
 		images.updateSettings({ quality: value });
 	}
 
-	function handleFormatChange(format: 'same' | ImageFormat) {
-		images.updateSettings({ outputFormat: format });
-	}
-
 	function handlePresetClick(value: number) {
 		images.updateSettings({ quality: value });
+	}
+
+	function handleFormatChange(format: 'same' | ImageFormat) {
+		images.updateSettings({ outputFormat: format });
 	}
 
 	function handleMetadataToggle() {
 		images.updateSettings({ stripMetadata: !images.settings.stripMetadata });
 	}
 
-	const currentPreset = $derived(
-		qualityPresets.find(p => p.value === images.settings.quality)?.label || 'Custom'
-	);
+	// Calculate slider position percentage for preset markers
+	function getPresetPosition(value: number): number {
+		return ((value - 10) / 90) * 100;
+	}
 </script>
 
-<div class="glass mb-6 rounded-2xl p-5">
-	<!-- Quality Section -->
-	<div class="mb-6">
-		<div class="mb-3 flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<Sliders class="h-4 w-4 text-surface-500" />
-				<label for="quality" class="text-sm font-medium text-surface-700 dark:text-surface-300">
-					Quality
-				</label>
-				<span class="rounded-full bg-accent-start/10 px-2 py-0.5 text-xs font-medium text-accent-start">
-					{currentPreset}
-				</span>
+<div class="glass mb-4 rounded-xl px-4 py-3">
+	<div class="flex flex-wrap items-center gap-x-6 gap-y-3">
+		<!-- Quality with integrated presets -->
+		<div class="flex items-center gap-3 flex-1 min-w-[280px]">
+			<span class="text-xs font-medium text-surface-500 uppercase tracking-wide">Quality</span>
+			<div class="relative flex-1 max-w-[300px]">
+				<!-- Preset markers -->
+				<div class="absolute -top-4 left-0 right-0 flex justify-between px-[10px] pointer-events-none">
+					{#each presets as preset}
+						<button
+							class="relative pointer-events-auto text-[10px] font-medium transition-colors {images.settings.quality === preset.value ? 'text-accent-start' : 'text-surface-400 hover:text-surface-300'}"
+							style="left: {getPresetPosition(preset.value) - 50}%"
+							onclick={() => handlePresetClick(preset.value)}
+						>
+							{preset.label}
+						</button>
+					{/each}
+				</div>
+				<!-- Slider -->
+				<input
+					type="range"
+					min="10"
+					max="100"
+					step="5"
+					value={images.settings.quality}
+					oninput={handleQualityChange}
+					class="w-full h-1.5 bg-surface-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-start [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
+				/>
+				<!-- Preset tick marks -->
+				<div class="absolute top-1/2 -translate-y-1/2 left-0 right-0 flex pointer-events-none">
+					{#each presets as preset}
+						<div
+							class="absolute w-1 h-1 rounded-full {images.settings.quality === preset.value ? 'bg-accent-start' : 'bg-surface-500'}"
+							style="left: calc({getPresetPosition(preset.value)}% - 2px)"
+						></div>
+					{/each}
+				</div>
 			</div>
-			<span class="font-mono text-sm font-semibold text-accent-start">
+			<span class="text-sm font-mono font-semibold text-accent-start w-10 text-right">
 				{images.settings.quality}%
 			</span>
 		</div>
 
-		<!-- Quality Presets -->
-		<div class="mb-3 flex gap-2">
-			{#each qualityPresets as preset}
-				<button
-					onclick={() => handlePresetClick(preset.value)}
-					class="group flex flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all {images.settings.quality === preset.value
-						? 'bg-gradient-to-r from-accent-start to-accent-end text-white shadow-lg shadow-accent-start/30'
-						: 'bg-surface-100 text-surface-600 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-surface-700'}"
-					title={preset.description}
-				>
-					<Zap class="h-4 w-4" />
-					<span class="text-xs font-semibold">{preset.label}</span>
-					<span class="text-[10px] opacity-70">{preset.value}%</span>
-				</button>
-			{/each}
-		</div>
+		<!-- Divider -->
+		<div class="hidden md:block w-px h-6 bg-surface-700"></div>
 
-		<!-- Quality Slider -->
-		<div class="relative">
-			<input
-				type="range"
-				id="quality"
-				min="10"
-				max="100"
-				step="5"
-				value={images.settings.quality}
-				oninput={handleQualityChange}
-				class="w-full h-2 bg-surface-200 dark:bg-surface-700 rounded-full appearance-none cursor-pointer accent-accent-start [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-gradient-to-r [&::-webkit-slider-thumb]:from-accent-start [&::-webkit-slider-thumb]:to-accent-end [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-accent-start/30 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
-			/>
-			<div class="flex justify-between mt-1 text-xs text-surface-400">
-				<span>Smaller file</span>
-				<span>Better quality</span>
-			</div>
-		</div>
-	</div>
-
-	<div class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-		<!-- Format Selector -->
-		<div class="md:flex-1">
-			<div class="mb-3 flex items-center gap-2">
-				<Settings2 class="h-4 w-4 text-surface-500" />
-				<span class="text-sm font-medium text-surface-700 dark:text-surface-300">
-					Output Format
-				</span>
-			</div>
-			<div class="flex flex-wrap gap-2">
+		<!-- Output Format -->
+		<div class="flex items-center gap-2">
+			<Settings2 class="h-3.5 w-3.5 text-surface-500" />
+			<div class="flex gap-1">
 				{#each formats as format}
 					<button
 						onclick={() => handleFormatChange(format.value)}
-						class="px-3 py-1.5 text-sm font-medium rounded-lg transition-all {images.settings.outputFormat === format.value
-							? 'bg-gradient-to-r from-accent-start to-accent-end text-white shadow-lg shadow-accent-start/30'
-							: 'bg-surface-100 text-surface-600 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-surface-700'}"
+						class="px-2 py-1 text-xs font-medium rounded-md transition-all {images.settings.outputFormat === format.value
+							? 'bg-accent-start text-white'
+							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700'}"
 					>
 						{format.label}
 					</button>
@@ -115,31 +102,24 @@
 			</div>
 		</div>
 
-		<!-- Metadata Toggle -->
-		<div class="md:w-auto">
-			<div class="mb-3 flex items-center gap-2">
-				<Shield class="h-4 w-4 text-surface-500" />
-				<span class="text-sm font-medium text-surface-700 dark:text-surface-300">
-					Strip Metadata
-				</span>
-				<button
-					onclick={handleMetadataToggle}
-					class="ml-auto relative h-6 w-11 rounded-full transition-colors {images.settings.stripMetadata
-						? 'bg-accent-start'
-						: 'bg-surface-300 dark:bg-surface-600'}"
-					role="switch"
-					aria-checked={images.settings.stripMetadata}
-				>
-					<span
-						class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform {images.settings.stripMetadata
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				</button>
+		<!-- Divider -->
+		<div class="hidden md:block w-px h-6 bg-surface-700"></div>
+
+		<!-- Strip Metadata Toggle -->
+		<button
+			onclick={handleMetadataToggle}
+			class="flex items-center gap-2 text-xs {images.settings.stripMetadata ? 'text-accent-start' : 'text-surface-400'}"
+			title={images.settings.stripMetadata ? 'EXIF data will be removed' : 'EXIF data will be preserved'}
+		>
+			<Shield class="h-3.5 w-3.5" />
+			<span class="font-medium">Strip EXIF</span>
+			<div
+				class="relative h-4 w-7 rounded-full transition-colors {images.settings.stripMetadata ? 'bg-accent-start' : 'bg-surface-600'}"
+			>
+				<span
+					class="absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-white shadow-sm transition-transform {images.settings.stripMetadata ? 'translate-x-3' : 'translate-x-0'}"
+				></span>
 			</div>
-			<p class="text-xs text-surface-400">
-				{images.settings.stripMetadata ? 'EXIF data will be removed' : 'EXIF data will be preserved'}
-			</p>
-		</div>
+		</button>
 	</div>
 </div>
