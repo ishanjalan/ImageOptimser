@@ -68,7 +68,7 @@
 </script>
 
 <div
-	class="glass group relative rounded-2xl transition-all duration-300 hover:shadow-lg"
+	class="glass group relative rounded-xl transition-all duration-300 hover:shadow-lg"
 	in:scale={{ duration: 200, start: 0.95 }}
 	out:fade={{ duration: 150 }}
 >
@@ -84,7 +84,7 @@
 	<!-- Thumbnail - larger, clickable -->
 	<button
 		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : showPreview = true}
-		class="relative w-full aspect-video overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
+		class="relative w-full h-28 overflow-hidden rounded-t-xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none"
 		aria-label="Compare or preview image"
 	>
 		<img
@@ -116,7 +116,7 @@
 	</button>
 
 	<!-- Info section -->
-	<div class="p-3">
+	<div class="p-2">
 		<!-- Filename + Size -->
 		<div class="flex items-center justify-between gap-2 mb-2">
 			<p class="truncate text-sm font-medium text-surface-900 dark:text-surface-100" title={item.name}>
