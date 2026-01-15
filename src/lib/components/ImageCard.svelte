@@ -46,14 +46,12 @@
 		item.format === 'svg' ? svgFormats : availableFormats
 	);
 	
-	// Check if SVG has a WebP alternative that's significantly smaller
+	// Check if SVG is larger than a 3× retina WebP (indicates complex SVG)
 	const showWebpSuggestion = $derived(
 		item.format === 'svg' &&
 		item.outputFormat === 'svg' &&
 		item.status === 'completed' &&
-		item.webpAlternativeSize &&
-		item.compressedSize &&
-		item.compressedSize > item.webpAlternativeSize * 3
+		item.webpAlternativeSize // Set only when SVG > 3× WebP
 	);
 
 	function formatBytes(bytes: number): string {
@@ -327,7 +325,7 @@
 				>
 					<AlertCircle class="h-4 w-4 flex-shrink-0" />
 					<span>
-						Complex SVG — WebP would be <strong>{formatBytes(item.webpAlternativeSize!)}</strong> (3× smaller). Click to convert.
+						Complex SVG — even a 3× retina WebP is smaller (<strong>{formatBytes(item.webpAlternativeSize!)}</strong>). Click to convert.
 					</span>
 				</button>
 			{/if}

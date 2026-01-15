@@ -3,9 +3,6 @@ import { optimize } from 'svgo';
 import { processImage as processImageInWorker, initPool } from './worker-pool';
 import heic2any from 'heic2any';
 
-// Threshold: warn if WebP would be this many times smaller than SVG
-const SVG_WEBP_WARNING_RATIO = 3;
-
 // Processing state
 let isProcessing = false;
 const queue: string[] = [];
@@ -109,14 +106,11 @@ async function compressImage(item: ImageItem) {
 			compressedBlob = await optimizeSvg(item.file);
 			images.updateItem(item.id, { progress: 70 });
 			
-			// Compute WebP alternative for complex SVG warning
-			// Only if the optimized SVG is still reasonably large (>5KB)
-			if (compressedBlob.size > 5000) {
-				const webpSize = await computeWebpSize(item.file, quality);
-				// If WebP is significantly smaller, store for warning display
-				if (webpSize > 0 && compressedBlob.size > webpSize * SVG_WEBP_WARNING_RATIO) {
-					images.updateItem(item.id, { webpAlternativeSize: webpSize });
-				}
+			// Compute WebP at 3× dimensions for complexity comparison
+			// If optimized SVG is larger than a 3× retina WebP, it's too complex
+			const webp3xSize = await computeWebp3xSize(item.file, quality);
+			if (webp3xSize > 0 && compressedBlob.size > webp3xSize) {
+				images.updateItem(item.id, { webpAlternativeSize: webp3xSize });
 			}
 			images.updateItem(item.id, { progress: 90 });
 		} else if (item.format === 'svg' && outputFormat !== 'svg') {
@@ -254,8 +248,13 @@ async function optimizeSvg(file: File): Promise<Blob> {
 	return new Blob([result.data], { type: 'image/svg+xml' });
 }
 
-// Render SVG to canvas and return as PNG blob for worker processing
+// Render SVG to canvas at 1× scale and return as PNG blob for worker processing
 async function renderSvgToRaster(file: File): Promise<{ blob: Blob; width: number; height: number }> {
+	return renderSvgAtScale(file, 1);
+}
+
+// Render SVG at a specific scale factor and return as PNG blob
+async function renderSvgAtScale(file: File, scale: number): Promise<{ blob: Blob; width: number; height: number }> {
 	const text = await file.text();
 	const svgBlob = new Blob([text], { type: 'image/svg+xml' });
 	const url = URL.createObjectURL(svgBlob);
@@ -265,26 +264,27 @@ async function renderSvgToRaster(file: File): Promise<{ blob: Blob; width: numbe
 		img.onload = () => {
 			URL.revokeObjectURL(url);
 			
-			// Use natural dimensions, with a reasonable max for very large SVGs
-			const maxDim = 4096;
-			let width = img.naturalWidth || 800;
-			let height = img.naturalHeight || 600;
+			// Get natural dimensions and apply scale
+			const baseWidth = img.naturalWidth || 800;
+			const baseHeight = img.naturalHeight || 600;
+			let width = Math.round(baseWidth * scale);
+			let height = Math.round(baseHeight * scale);
 			
-			// Scale down if too large
+			// Cap at reasonable max to avoid memory issues
+			const maxDim = 8192;
 			if (width > maxDim || height > maxDim) {
-				const scale = maxDim / Math.max(width, height);
-				width = Math.round(width * scale);
-				height = Math.round(height * scale);
+				const capScale = maxDim / Math.max(width, height);
+				width = Math.round(width * capScale);
+				height = Math.round(height * capScale);
 			}
 			
-			// Render to canvas
+			// Render to canvas at scaled dimensions
 			const canvas = document.createElement('canvas');
 			canvas.width = width;
 			canvas.height = height;
 			const ctx = canvas.getContext('2d')!;
 			ctx.drawImage(img, 0, 0, width, height);
 			
-			// Convert to PNG blob for worker
 			canvas.toBlob((blob) => {
 				if (blob) {
 					resolve({ blob, width, height });
@@ -301,10 +301,12 @@ async function renderSvgToRaster(file: File): Promise<{ blob: Blob; width: numbe
 	});
 }
 
-// Compute WebP size for comparison (used for SVG complexity warning)
-async function computeWebpSize(file: File, quality: number): Promise<number> {
+// Compute WebP size at 3× dimensions for SVG complexity comparison
+// If the optimized SVG is larger than a 3× retina WebP, it's too complex
+async function computeWebp3xSize(file: File, quality: number): Promise<number> {
 	try {
-		const { blob, width, height } = await renderSvgToRaster(file);
+		// Render SVG at 3× dimensions (retina/high-DPI quality)
+		const { blob } = await renderSvgAtScale(file, 3);
 		const buffer = await blob.arrayBuffer();
 		
 		const { result } = await processImageInWorker(
@@ -313,8 +315,8 @@ async function computeWebpSize(file: File, quality: number): Promise<number> {
 			'png',
 			'webp',
 			quality,
-			false, // not lossless for comparison
-			null,  // no resize
+			false, // lossy for fair comparison
+			null,  // no additional resize
 			undefined // no progress callback
 		);
 		
