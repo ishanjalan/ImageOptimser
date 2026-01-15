@@ -3,6 +3,9 @@ import { optimize } from 'svgo';
 import { processImage as processImageInWorker, initPool } from './worker-pool';
 import heic2any from 'heic2any';
 
+// Threshold: warn if WebP would be this many times smaller than SVG
+const SVG_WEBP_WARNING_RATIO = 3;
+
 // Processing state
 let isProcessing = false;
 const queue: string[] = [];
@@ -102,10 +105,52 @@ async function compressImage(item: ImageItem) {
 		let finalHeight: number | undefined;
 
 		if (item.format === 'svg' && outputFormat === 'svg') {
-			// SVG optimization stays on main thread (SVGO is JS, not WASM)
-			// Note: SVG resize is not supported (vector format)
+			// SVG → SVG: Optimize with SVGO
 			compressedBlob = await optimizeSvg(item.file);
+			images.updateItem(item.id, { progress: 70 });
+			
+			// Compute WebP alternative for complex SVG warning
+			// Only if the optimized SVG is still reasonably large (>5KB)
+			if (compressedBlob.size > 5000) {
+				const webpSize = await computeWebpSize(item.file, quality);
+				// If WebP is significantly smaller, store for warning display
+				if (webpSize > 0 && compressedBlob.size > webpSize * SVG_WEBP_WARNING_RATIO) {
+					images.updateItem(item.id, { webpAlternativeSize: webpSize });
+				}
+			}
 			images.updateItem(item.id, { progress: 90 });
+		} else if (item.format === 'svg' && outputFormat !== 'svg') {
+			// SVG → Raster: Render to canvas, then process through worker
+			images.updateItem(item.id, { progress: 10 });
+			
+			const { blob: pngBlob, width, height } = await renderSvgToRaster(item.file);
+			
+			// Update dimensions if we didn't have them
+			if (!item.width || !item.height) {
+				images.updateItem(item.id, { width, height });
+			}
+			
+			images.updateItem(item.id, { progress: 30 });
+			
+			const imageBuffer = await pngBlob.arrayBuffer();
+			
+			const { result, mimeType, newWidth, newHeight } = await processImageInWorker(
+				item.id,
+				imageBuffer,
+				'png', // Treat rasterized SVG as PNG for the worker
+				outputFormat,
+				quality,
+				lossless,
+				maxDimension,
+				(progress) => {
+					const scaledProgress = 30 + (progress * 0.6);
+					images.updateItem(item.id, { progress: scaledProgress });
+				}
+			);
+			
+			compressedBlob = new Blob([result], { type: mimeType });
+			finalWidth = newWidth;
+			finalHeight = newHeight;
 		} else if (item.format === 'heic') {
 			// HEIC: Convert to PNG first, then process
 			images.updateItem(item.id, { progress: 10 });
@@ -209,6 +254,77 @@ async function optimizeSvg(file: File): Promise<Blob> {
 	return new Blob([result.data], { type: 'image/svg+xml' });
 }
 
+// Render SVG to canvas and return as PNG blob for worker processing
+async function renderSvgToRaster(file: File): Promise<{ blob: Blob; width: number; height: number }> {
+	const text = await file.text();
+	const svgBlob = new Blob([text], { type: 'image/svg+xml' });
+	const url = URL.createObjectURL(svgBlob);
+
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			
+			// Use natural dimensions, with a reasonable max for very large SVGs
+			const maxDim = 4096;
+			let width = img.naturalWidth || 800;
+			let height = img.naturalHeight || 600;
+			
+			// Scale down if too large
+			if (width > maxDim || height > maxDim) {
+				const scale = maxDim / Math.max(width, height);
+				width = Math.round(width * scale);
+				height = Math.round(height * scale);
+			}
+			
+			// Render to canvas
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			const ctx = canvas.getContext('2d')!;
+			ctx.drawImage(img, 0, 0, width, height);
+			
+			// Convert to PNG blob for worker
+			canvas.toBlob((blob) => {
+				if (blob) {
+					resolve({ blob, width, height });
+				} else {
+					reject(new Error('Failed to render SVG to canvas'));
+				}
+			}, 'image/png');
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error('Failed to load SVG for rasterization'));
+		};
+		img.src = url;
+	});
+}
+
+// Compute WebP size for comparison (used for SVG complexity warning)
+async function computeWebpSize(file: File, quality: number): Promise<number> {
+	try {
+		const { blob, width, height } = await renderSvgToRaster(file);
+		const buffer = await blob.arrayBuffer();
+		
+		const { result } = await processImageInWorker(
+			`webp-compare-${Date.now()}`,
+			buffer,
+			'png',
+			'webp',
+			quality,
+			false, // not lossless for comparison
+			null,  // no resize
+			undefined // no progress callback
+		);
+		
+		return result.byteLength;
+	} catch (error) {
+		console.warn('Failed to compute WebP comparison:', error);
+		return 0;
+	}
+}
+
 export function getOutputExtension(format: OutputFormat): string {
 	const map: Record<OutputFormat, string> = {
 		jpeg: '.jpg',
@@ -242,7 +358,8 @@ export async function reprocessImage(id: string, newFormat: OutputFormat) {
 		progress: 0,
 		compressedSize: undefined,
 		compressedUrl: undefined,
-		compressedBlob: undefined
+		compressedBlob: undefined,
+		webpAlternativeSize: undefined // Reset WebP comparison
 	});
 
 	// Initialize worker pool if needed
@@ -275,6 +392,9 @@ export async function reprocessAllImages() {
 		if (item.format === 'heic') {
 			// HEIC can't use 'same'
 			outputFormat = images.settings.outputFormat === 'same' ? 'webp' : images.settings.outputFormat;
+		} else if (item.format === 'svg') {
+			// SVG: use 'svg' if 'same', otherwise convert
+			outputFormat = images.settings.outputFormat === 'same' ? 'svg' : images.settings.outputFormat;
 		} else {
 			outputFormat = images.settings.outputFormat === 'same' 
 				? item.format as OutputFormat 

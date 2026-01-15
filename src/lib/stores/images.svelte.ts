@@ -18,6 +18,8 @@ export interface ImageItem {
 	error?: string;
 	width?: number;
 	height?: number;
+	// For SVG: tracks WebP alternative size for "complex SVG" warning
+	webpAlternativeSize?: number;
 }
 
 export interface CompressionSettings {
@@ -158,12 +160,13 @@ function createImagesStore() {
 				const format = getFormatFromMime(file.type);
 				
 				// Determine output format:
-				// - SVG always stays as SVG
+				// - SVG defaults to SVG if 'same', but can now be converted to raster
 				// - HEIC must be converted (can't output HEIC), default to WebP
 				// - Others follow user setting
 				let outputFormat: OutputFormat;
 				if (format === 'svg') {
-					outputFormat = 'svg';
+					// SVG: use 'svg' if 'same', otherwise use the user's chosen format
+					outputFormat = settings.outputFormat === 'same' ? 'svg' : settings.outputFormat;
 				} else if (format === 'heic') {
 					// HEIC is input-only, always convert to user's preferred format (or WebP if 'same')
 					outputFormat = settings.outputFormat === 'same' ? 'webp' : settings.outputFormat;
@@ -229,13 +232,17 @@ function createImagesStore() {
 			settings = { ...settings, ...newSettings };
 			saveSettings(settings);
 
-			// Update output format for pending items (except SVG which is locked)
+			// Update output format for pending items
 			if (newSettings.outputFormat !== undefined) {
 				items = items.map((item) => {
-					if (item.status === 'pending' && item.format !== 'svg') {
+					if (item.status === 'pending') {
 						// HEIC can't use 'same' - default to WebP
 						if (item.format === 'heic' && newSettings.outputFormat === 'same') {
 							return { ...item, outputFormat: 'webp' as OutputFormat };
+						}
+						// SVG: use 'svg' if 'same', otherwise convert
+						if (item.format === 'svg' && newSettings.outputFormat === 'same') {
+							return { ...item, outputFormat: 'svg' as OutputFormat };
 						}
 						return {
 							...item,

@@ -33,10 +33,27 @@
 		{ value: 'avif', label: 'AVIF', color: 'from-purple-500 to-pink-500' }
 	];
 
+	// SVG can now also convert to raster formats
+	const svgFormats: { value: OutputFormat; label: string; color: string }[] = [
+		{ value: 'svg', label: 'SVG', color: 'from-cyan-500 to-blue-500' },
+		{ value: 'webp', label: 'WebP', color: 'from-green-500 to-emerald-500' },
+		{ value: 'png', label: 'PNG', color: 'from-blue-500 to-indigo-500' },
+		{ value: 'avif', label: 'AVIF', color: 'from-purple-500 to-pink-500' },
+		{ value: 'jpeg', label: 'JPEG', color: 'from-orange-500 to-red-500' }
+	];
+
 	const outputOptions = $derived(
-		item.format === 'svg'
-			? [{ value: 'svg' as OutputFormat, label: 'SVG', color: 'from-cyan-500 to-blue-500' }]
-			: availableFormats
+		item.format === 'svg' ? svgFormats : availableFormats
+	);
+	
+	// Check if SVG has a WebP alternative that's significantly smaller
+	const showWebpSuggestion = $derived(
+		item.format === 'svg' &&
+		item.outputFormat === 'svg' &&
+		item.status === 'completed' &&
+		item.webpAlternativeSize &&
+		item.compressedSize &&
+		item.compressedSize > item.webpAlternativeSize * 3
 	);
 
 	function formatBytes(bytes: number): string {
@@ -236,46 +253,39 @@
 						{item.format}
 					</span>
 					<ArrowRight class="h-3.5 w-3.5 text-surface-400" />
-					{#if item.format === 'svg'}
-						<!-- SVG is locked - show static badge -->
-						<span class="rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-2.5 py-1 text-xs font-bold uppercase text-white">
-							SVG
-						</span>
-					{:else}
-						<!-- Format dropdown for raster images -->
-						<div class="relative">
+					<!-- Format dropdown for all images (including SVG now) -->
+					<div class="relative">
+						<button
+							onclick={() => showFormatMenu = !showFormatMenu}
+							class="flex items-center gap-1.5 rounded-lg bg-gradient-to-r {getCurrentFormatColor()} px-2.5 py-1 text-xs font-bold uppercase text-white transition-all hover:opacity-90"
+						>
+							{item.outputFormat}
+							<ChevronDown class="h-3.5 w-3.5" />
+						</button>
+						
+						{#if showFormatMenu}
 							<button
-								onclick={() => showFormatMenu = !showFormatMenu}
-								class="flex items-center gap-1.5 rounded-lg bg-gradient-to-r {getCurrentFormatColor()} px-2.5 py-1 text-xs font-bold uppercase text-white transition-all hover:opacity-90"
+								class="fixed inset-0 z-40 cursor-default"
+								onclick={() => showFormatMenu = false}
+								aria-label="Close menu"
+							></button>
+							<div
+								class="absolute left-0 bottom-full z-50 mb-2 min-w-[120px] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
+								in:scale={{ duration: 150, start: 0.95 }}
+								out:fade={{ duration: 100 }}
 							>
-								{item.outputFormat}
-								<ChevronDown class="h-3.5 w-3.5" />
-							</button>
-							
-							{#if showFormatMenu}
-								<button
-									class="fixed inset-0 z-40 cursor-default"
-									onclick={() => showFormatMenu = false}
-									aria-label="Close menu"
-								></button>
-								<div
-									class="absolute left-0 bottom-full z-50 mb-2 min-w-[120px] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
-									in:scale={{ duration: 150, start: 0.95 }}
-									out:fade={{ duration: 100 }}
-								>
-									{#each outputOptions as format}
-										<button
-											onclick={() => handleFormatChange(format.value)}
-											class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
-										>
-											<span class="h-2.5 w-2.5 rounded-full bg-gradient-to-r {format.color}"></span>
-											<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
-										</button>
-									{/each}
-								</div>
-							{/if}
-						</div>
-					{/if}
+								{#each outputOptions as format}
+									<button
+										onclick={() => handleFormatChange(format.value)}
+										class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
+									>
+										<span class="h-2.5 w-2.5 rounded-full bg-gradient-to-r {format.color}"></span>
+										<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
 				</div>
 
 				<!-- Action buttons -->
@@ -308,6 +318,19 @@
 					</button>
 				</div>
 			</div>
+			
+			<!-- Complex SVG Warning -->
+			{#if showWebpSuggestion}
+				<button
+					onclick={() => handleFormatChange('webp')}
+					class="mt-3 flex w-full items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+				>
+					<AlertCircle class="h-4 w-4 flex-shrink-0" />
+					<span>
+						Complex SVG — WebP would be <strong>{formatBytes(item.webpAlternativeSize!)}</strong> (3× smaller). Click to convert.
+					</span>
+				</button>
+			{/if}
 		{/if}
 	</div>
 </div>
