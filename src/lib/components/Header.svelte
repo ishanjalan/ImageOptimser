@@ -3,6 +3,11 @@
 	import { Github, Zap, Command, Keyboard, WifiOff, Download } from 'lucide-svelte';
 	import { scale, fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
+	import { images } from '$lib/stores/images.svelte';
+
+	function handleLogoClick() {
+		images.clearAll();
+	}
 
 	let showShortcuts = $state(false);
 	let isOffline = $state(false);
@@ -81,7 +86,7 @@
 			class="glass flex items-center justify-between rounded-2xl px-4 sm:px-6 py-3 shadow-lg shadow-black/5"
 		>
 			<!-- Logo -->
-			<a href="{base}/" class="flex items-center gap-3 group">
+			<a href="{base}/" class="flex items-center gap-3 group" onclick={handleLogoClick}>
 				<div
 					class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-start to-accent-end shadow-lg shadow-accent-start/30 transition-transform group-hover:scale-110"
 				>

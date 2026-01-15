@@ -27,6 +27,10 @@
 	const export2x = $derived(images.settings.export2x);
 	const export3x = $derived(images.settings.export3x);
 	const hasScaleExport = $derived(export2x || export3x);
+	// Only show SVG export options when there are SVG files that will be converted to raster
+	const hasSvgToRaster = $derived(
+		images.items.some(i => i.format === 'svg' && i.outputFormat !== 'svg')
+	);
 
 	function handlePresetClick(value: number) {
 		images.updateSettings({ quality: value });
@@ -146,34 +150,36 @@
 			</div>
 		</button>
 
-		<!-- Divider -->
-		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
+		<!-- Multi-scale Export (only shown for SVG → raster conversions) -->
+		{#if hasSvgToRaster}
+			<!-- Divider -->
+			<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
 
-		<!-- Multi-scale Export (for SVG → raster) -->
-		<div class="flex items-center gap-2">
-			<Layers class="h-4 w-4 text-surface-400" />
-			<span class="text-xs font-medium text-surface-500 uppercase tracking-wide">SVG Export</span>
-			<div class="flex gap-1">
-				<button
-					onclick={handleExport2xToggle}
-					class="px-2 py-1 text-xs font-bold rounded transition-all {export2x
-						? 'bg-accent-start text-white'
-						: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
-					title="Also export @2x scale for retina displays"
-				>
-					@2x
-				</button>
-				<button
-					onclick={handleExport3xToggle}
-					class="px-2 py-1 text-xs font-bold rounded transition-all {export3x
-						? 'bg-accent-start text-white'
-						: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
-					title="Also export @3x scale for high-DPI displays"
-				>
-					@3x
-				</button>
+			<div class="flex items-center gap-2">
+				<Layers class="h-4 w-4 text-surface-400" />
+				<span class="text-xs font-medium text-surface-500 uppercase tracking-wide">SVG Export</span>
+				<div class="flex gap-1">
+					<button
+						onclick={handleExport2xToggle}
+						class="px-2 py-1 text-xs font-bold rounded transition-all {export2x
+							? 'bg-accent-start text-white'
+							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
+						title="Also export @2x scale for retina displays"
+					>
+						@2x
+					</button>
+					<button
+						onclick={handleExport3xToggle}
+						class="px-2 py-1 text-xs font-bold rounded transition-all {export3x
+							? 'bg-accent-start text-white'
+							: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
+						title="Also export @3x scale for high-DPI displays"
+					>
+						@3x
+					</button>
+				</div>
 			</div>
-		</div>
+		{/if}
 
 		<!-- Spacer -->
 		<div class="flex-1"></div>
