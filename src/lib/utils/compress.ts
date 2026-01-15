@@ -1,4 +1,4 @@
-import { images, type OutputFormat, type ImageItem } from '$lib/stores/images.svelte';
+import { images, type OutputFormat, type ImageItem, type ScaledOutput } from '$lib/stores/images.svelte';
 import { optimize } from 'svgo';
 import { processImage as processImageInWorker, initPool } from './worker-pool';
 import heic2any from 'heic2any';
@@ -94,12 +94,14 @@ async function compressImage(item: ImageItem) {
 
 		const quality = images.settings.quality;
 		const lossless = images.settings.lossless;
-		const maxDimension = images.settings.maxDimension;
+		const export2x = images.settings.export2x;
+		const export3x = images.settings.export3x;
 		const outputFormat = item.outputFormat;
 
 		let compressedBlob: Blob;
 		let finalWidth: number | undefined;
 		let finalHeight: number | undefined;
+		let scaledOutputs: ScaledOutput[] | undefined;
 
 		if (item.format === 'svg' && outputFormat === 'svg') {
 			// SVG → SVG: Optimize with SVGO
@@ -114,37 +116,70 @@ async function compressImage(item: ImageItem) {
 			}
 			images.updateItem(item.id, { progress: 90 });
 		} else if (item.format === 'svg' && outputFormat !== 'svg') {
-			// SVG → Raster: Render to canvas, then process through worker
-			images.updateItem(item.id, { progress: 10 });
+			// SVG → Raster: Generate multi-scale outputs (1x, optionally 2x, 3x)
+			images.updateItem(item.id, { progress: 5 });
 			
-			const { blob: pngBlob, width, height } = await renderSvgToRaster(item.file);
+			// Determine which scales to generate
+			const scales: number[] = [1];
+			if (export2x) scales.push(2);
+			if (export3x) scales.push(3);
 			
-			// Update dimensions if we didn't have them
-			if (!item.width || !item.height) {
-				images.updateItem(item.id, { width, height });
+			scaledOutputs = [];
+			let totalSize = 0;
+			const progressPerScale = 90 / scales.length;
+			
+			for (let i = 0; i < scales.length; i++) {
+				const scale = scales[i];
+				const baseProgress = 5 + (i * progressPerScale);
+				
+				// Render SVG at this scale
+				const { blob: pngBlob, width, height } = await renderSvgAtScale(item.file, scale);
+				images.updateItem(item.id, { progress: baseProgress + progressPerScale * 0.3 });
+				
+				// Process through worker
+				const imageBuffer = await pngBlob.arrayBuffer();
+				const { result, mimeType, width: outWidth, height: outHeight } = await processImageInWorker(
+					`${item.id}-${scale}x`,
+					imageBuffer,
+					'png',
+					outputFormat,
+					quality,
+					lossless,
+					(progress) => {
+						const scaledProgress = baseProgress + progressPerScale * 0.3 + (progress / 100) * progressPerScale * 0.7;
+						images.updateItem(item.id, { progress: scaledProgress });
+					}
+				);
+				
+				const blob = new Blob([result], { type: mimeType });
+				const url = URL.createObjectURL(blob);
+				
+				scaledOutputs.push({
+					scale,
+					blob,
+					size: blob.size,
+					url,
+					width: outWidth,
+					height: outHeight
+				});
+				
+				totalSize += blob.size;
+				
+				// Set 1x as the primary output
+				if (scale === 1) {
+					compressedBlob = blob;
+					finalWidth = outWidth;
+					finalHeight = outHeight;
+				}
 			}
 			
-			images.updateItem(item.id, { progress: 30 });
-			
-			const imageBuffer = await pngBlob.arrayBuffer();
-			
-			const { result, mimeType, newWidth, newHeight } = await processImageInWorker(
-				item.id,
-				imageBuffer,
-				'png', // Treat rasterized SVG as PNG for the worker
-				outputFormat,
-				quality,
-				lossless,
-				maxDimension,
-				(progress) => {
-					const scaledProgress = 30 + (progress * 0.6);
-					images.updateItem(item.id, { progress: scaledProgress });
+			// Update dimensions from 1x output
+			if (!item.width || !item.height) {
+				const oneX = scaledOutputs.find(o => o.scale === 1);
+				if (oneX) {
+					images.updateItem(item.id, { width: oneX.width, height: oneX.height });
 				}
-			);
-			
-			compressedBlob = new Blob([result], { type: mimeType });
-			finalWidth = newWidth;
-			finalHeight = newHeight;
+			}
 		} else if (item.format === 'heic') {
 			// HEIC: Convert to PNG first, then process
 			images.updateItem(item.id, { progress: 10 });
@@ -161,60 +196,63 @@ async function compressImage(item: ImageItem) {
 			// Now process the PNG through the worker
 			const imageBuffer = await pngBlob.arrayBuffer();
 
-			const { result, mimeType, newWidth, newHeight } = await processImageInWorker(
+			const { result, mimeType, width: outWidth, height: outHeight } = await processImageInWorker(
 				item.id,
 				imageBuffer,
-				'png', // Treat as PNG for the worker
+				'png',
 				outputFormat,
 				quality,
 				lossless,
-				maxDimension,
 				(progress) => {
-					// Scale progress from 30-90 range
 					const scaledProgress = 30 + (progress * 0.6);
 					images.updateItem(item.id, { progress: scaledProgress });
 				}
 			);
 
 			compressedBlob = new Blob([result], { type: mimeType });
-			finalWidth = newWidth;
-			finalHeight = newHeight;
+			finalWidth = outWidth;
+			finalHeight = outHeight;
 		} else {
 			// Standard raster image processing via worker
 			const imageBuffer = await item.file.arrayBuffer();
 
-			const { result, mimeType, newWidth, newHeight } = await processImageInWorker(
+			const { result, mimeType, width: outWidth, height: outHeight } = await processImageInWorker(
 				item.id,
 				imageBuffer,
 				item.format,
 				outputFormat,
 				quality,
 				lossless,
-				maxDimension,
 				(progress) => {
 					images.updateItem(item.id, { progress });
 				}
 			);
 
 			compressedBlob = new Blob([result], { type: mimeType });
-			finalWidth = newWidth;
-			finalHeight = newHeight;
+			finalWidth = outWidth;
+			finalHeight = outHeight;
 		}
 
-		// Create URL for preview
-		const compressedUrl = URL.createObjectURL(compressedBlob);
+		// Create URL for preview (1x output for SVG multi-scale)
+		const compressedUrl = URL.createObjectURL(compressedBlob!);
 
-		// Update item with final dimensions if they changed (due to resize)
+		// Calculate total size (sum of all scaled outputs or just single output)
+		const totalCompressedSize = scaledOutputs 
+			? scaledOutputs.reduce((sum, o) => sum + o.size, 0)
+			: compressedBlob!.size;
+
+		// Update item
 		const updates: Partial<ImageItem> = {
 			status: 'completed',
 			progress: 100,
-			compressedSize: compressedBlob.size,
+			compressedSize: totalCompressedSize,
 			compressedUrl,
-			compressedBlob
+			compressedBlob: compressedBlob!,
+			scaledOutputs
 		};
 
-		// Update dimensions if resized
-		if (finalWidth && finalHeight && (finalWidth !== item.width || finalHeight !== item.height)) {
+		// Update dimensions from final output
+		if (finalWidth && finalHeight) {
 			updates.width = finalWidth;
 			updates.height = finalHeight;
 		}
@@ -315,9 +353,7 @@ async function computeWebp3xSize(file: File, quality: number): Promise<number> {
 			'png',
 			'webp',
 			quality,
-			false, // lossy for fair comparison
-			null,  // no additional resize
-			undefined // no progress callback
+			false // lossy for fair comparison
 		);
 		
 		return result.byteLength;
@@ -338,9 +374,10 @@ export function getOutputExtension(format: OutputFormat): string {
 	return map[format];
 }
 
-export function getOutputFilename(originalName: string, format: OutputFormat): string {
+export function getOutputFilename(originalName: string, format: OutputFormat, scale?: number): string {
 	const baseName = originalName.replace(/\.[^/.]+$/, '');
-	return `${baseName}-optimized${getOutputExtension(format)}`;
+	const scaleSuffix = scale && scale > 1 ? `@${scale}x` : '';
+	return `${baseName}-optimized${scaleSuffix}${getOutputExtension(format)}`;
 }
 
 // Re-process a single image with a new output format
@@ -348,10 +385,11 @@ export async function reprocessImage(id: string, newFormat: OutputFormat) {
 	const item = images.getItemById(id);
 	if (!item) return;
 
-	// Clean up old compressed URL
+	// Clean up old URLs
 	if (item.compressedUrl) {
 		URL.revokeObjectURL(item.compressedUrl);
 	}
+	item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 
 	// Update the item with new format and reset status
 	images.updateItem(id, {
@@ -361,7 +399,8 @@ export async function reprocessImage(id: string, newFormat: OutputFormat) {
 		compressedSize: undefined,
 		compressedUrl: undefined,
 		compressedBlob: undefined,
-		webpAlternativeSize: undefined // Reset WebP comparison
+		webpAlternativeSize: undefined,
+		scaledOutputs: undefined
 	});
 
 	// Initialize worker pool if needed
@@ -388,6 +427,7 @@ export async function reprocessAllImages() {
 		if (item.compressedUrl) {
 			URL.revokeObjectURL(item.compressedUrl);
 		}
+		item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 		
 		// Determine output format based on settings
 		let outputFormat: OutputFormat;
@@ -409,7 +449,8 @@ export async function reprocessAllImages() {
 			progress: 0,
 			compressedSize: undefined,
 			compressedUrl: undefined,
-			compressedBlob: undefined
+			compressedBlob: undefined,
+			scaledOutputs: undefined
 		});
 	}
 

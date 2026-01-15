@@ -11,7 +11,6 @@ export interface WorkerRequest {
 	outputFormat: ImageFormat;
 	quality: number;
 	lossless: boolean;
-	maxDimension: number | null;
 }
 
 export interface WorkerResponse {
@@ -21,8 +20,8 @@ export interface WorkerResponse {
 	mimeType?: string;
 	error?: string;
 	progress?: number;
-	newWidth?: number;
-	newHeight?: number;
+	width?: number;
+	height?: number;
 }
 
 // WASM codec functions (loaded lazily)
@@ -61,46 +60,6 @@ async function initCodecs() {
 	avifDecode = avifModule.decode;
 
 	codecsInitialized = true;
-}
-
-// Resize ImageData using OffscreenCanvas
-function resizeImageData(imageData: ImageData, maxDimension: number): ImageData {
-	const { width, height } = imageData;
-	
-	// Check if resize is needed
-	if (width <= maxDimension && height <= maxDimension) {
-		return imageData;
-	}
-
-	// Calculate new dimensions maintaining aspect ratio
-	let newWidth: number;
-	let newHeight: number;
-	
-	if (width > height) {
-		newWidth = maxDimension;
-		newHeight = Math.round((height / width) * maxDimension);
-	} else {
-		newHeight = maxDimension;
-		newWidth = Math.round((width / height) * maxDimension);
-	}
-
-	// Create source canvas with original image
-	const srcCanvas = new OffscreenCanvas(width, height);
-	const srcCtx = srcCanvas.getContext('2d')!;
-	srcCtx.putImageData(imageData, 0, 0);
-
-	// Create destination canvas with new dimensions
-	const dstCanvas = new OffscreenCanvas(newWidth, newHeight);
-	const dstCtx = dstCanvas.getContext('2d')!;
-	
-	// Use high-quality image smoothing
-	dstCtx.imageSmoothingEnabled = true;
-	dstCtx.imageSmoothingQuality = 'high';
-	
-	// Draw resized image
-	dstCtx.drawImage(srcCanvas, 0, 0, newWidth, newHeight);
-
-	return dstCtx.getImageData(0, 0, newWidth, newHeight);
 }
 
 // Decode image buffer to ImageData
@@ -166,7 +125,7 @@ function sendProgress(id: string, progress: number) {
 
 // Process compression request
 async function processCompression(request: WorkerRequest): Promise<void> {
-	const { id, imageBuffer, inputFormat, outputFormat, quality, lossless, maxDimension } = request;
+	const { id, imageBuffer, inputFormat, outputFormat, quality, lossless } = request;
 
 	try {
 		// Initialize codecs if needed
@@ -174,19 +133,8 @@ async function processCompression(request: WorkerRequest): Promise<void> {
 		sendProgress(id, 20);
 
 		// Decode the image
-		let imageData = await decodeImage(imageBuffer, inputFormat);
-		sendProgress(id, 40);
-
-		// Resize if needed
-		let newWidth = imageData.width;
-		let newHeight = imageData.height;
-		
-		if (maxDimension && maxDimension > 0) {
-			imageData = resizeImageData(imageData, maxDimension);
-			newWidth = imageData.width;
-			newHeight = imageData.height;
-		}
-		sendProgress(id, 60);
+		const imageData = await decodeImage(imageBuffer, inputFormat);
+		sendProgress(id, 50);
 
 		// Encode to target format
 		const result = await encodeImage(imageData, outputFormat, quality, lossless);
@@ -198,8 +146,8 @@ async function processCompression(request: WorkerRequest): Promise<void> {
 			success: true,
 			result,
 			mimeType: getMimeType(outputFormat),
-			newWidth,
-			newHeight
+			width: imageData.width,
+			height: imageData.height
 		};
 		self.postMessage(response, [result]);
 	} catch (error) {

@@ -10,9 +10,8 @@ export interface CompressionJob {
 	outputFormat: ImageFormat;
 	quality: number;
 	lossless: boolean;
-	maxDimension: number | null;
 	onProgress?: (progress: number) => void;
-	onComplete: (result: ArrayBuffer, mimeType: string, newWidth?: number, newHeight?: number) => void;
+	onComplete: (result: ArrayBuffer, mimeType: string, width: number, height: number) => void;
 	onError: (error: string) => void;
 }
 
@@ -82,7 +81,7 @@ function createWorker(): Promise<PoolWorker> {
 
 				// Job completed
 				if (response.success && response.result && response.mimeType) {
-					job.onComplete(response.result, response.mimeType, response.newWidth, response.newHeight);
+					job.onComplete(response.result, response.mimeType, response.width!, response.height!);
 				} else if (!response.success) {
 					job.onError(response.error || 'Unknown error');
 				}
@@ -177,8 +176,7 @@ function assignJobToWorker(poolWorker: PoolWorker, job: CompressionJob): void {
 		inputFormat: job.inputFormat,
 		outputFormat: job.outputFormat,
 		quality: job.quality,
-		lossless: job.lossless,
-		maxDimension: job.maxDimension
+		lossless: job.lossless
 	};
 
 	// Transfer the buffer to the worker for better performance
@@ -212,9 +210,8 @@ export function processImage(
 	outputFormat: ImageFormat,
 	quality: number,
 	lossless: boolean,
-	maxDimension: number | null,
 	onProgress?: (progress: number) => void
-): Promise<{ result: ArrayBuffer; mimeType: string; newWidth?: number; newHeight?: number }> {
+): Promise<{ result: ArrayBuffer; mimeType: string; width: number; height: number }> {
 	return new Promise((resolve, reject) => {
 		const job: CompressionJob = {
 			id,
@@ -223,9 +220,8 @@ export function processImage(
 			outputFormat,
 			quality,
 			lossless,
-			maxDimension,
 			onProgress,
-			onComplete: (result, mimeType, newWidth, newHeight) => resolve({ result, mimeType, newWidth, newHeight }),
+			onComplete: (result, mimeType, width, height) => resolve({ result, mimeType, width, height }),
 			onError: (error) => reject(new Error(error))
 		};
 

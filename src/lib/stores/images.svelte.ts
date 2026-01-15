@@ -2,15 +2,24 @@ export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg' | 'heic';
 export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg'; // HEIC is input-only
 export type ImageStatus = 'pending' | 'processing' | 'completed' | 'error';
 
+export interface ScaledOutput {
+	scale: number; // 1, 2, or 3
+	blob: Blob;
+	size: number;
+	url: string;
+	width: number;
+	height: number;
+}
+
 export interface ImageItem {
 	id: string;
 	file: File;
 	name: string;
 	originalSize: number;
-	compressedSize?: number;
+	compressedSize?: number; // Total size of all outputs
 	originalUrl: string;
-	compressedUrl?: string;
-	compressedBlob?: Blob;
+	compressedUrl?: string; // URL for 1x output (primary preview)
+	compressedBlob?: Blob; // 1x output blob
 	format: ImageFormat;
 	outputFormat: OutputFormat;
 	status: ImageStatus;
@@ -20,6 +29,8 @@ export interface ImageItem {
 	height?: number;
 	// For SVG: tracks WebP alternative size for "complex SVG" warning
 	webpAlternativeSize?: number;
+	// Multi-scale outputs (for SVG → raster conversions)
+	scaledOutputs?: ScaledOutput[];
 }
 
 export interface CompressionSettings {
@@ -27,7 +38,9 @@ export interface CompressionSettings {
 	outputFormat: 'same' | OutputFormat;
 	stripMetadata: boolean;
 	lossless: boolean;
-	maxDimension: number | null; // Max width/height in pixels, null = no resize
+	// Multi-scale export for SVG → raster (always includes 1x)
+	export2x: boolean;
+	export3x: boolean;
 }
 
 export interface BatchStats {
@@ -68,7 +81,8 @@ function getDefaultSettings(): CompressionSettings {
 		outputFormat: 'webp', // Best compression + universal support (web, Android, iOS 14+)
 		stripMetadata: true,
 		lossless: false,
-		maxDimension: null // No resize by default
+		export2x: false, // Multi-scale disabled by default
+		export3x: false
 	};
 }
 
@@ -215,6 +229,8 @@ function createImagesStore() {
 			if (item) {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
+				// Revoke scaled output URLs
+				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			}
 			items = items.filter((i) => i.id !== id);
 		},
@@ -223,6 +239,7 @@ function createImagesStore() {
 			items.forEach((item) => {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
+				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			});
 			items = [];
 			batchStats = { startTime: null, endTime: null, totalImages: 0 };

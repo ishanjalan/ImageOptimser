@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { images, type OutputFormat } from '$lib/stores/images.svelte';
 	import { reprocessAllImages } from '$lib/utils/compress';
-	import { Settings2, Shield, RefreshCw, Sparkles, Maximize2 } from 'lucide-svelte';
+	import { Settings2, Shield, RefreshCw, Sparkles, Layers } from 'lucide-svelte';
 
 	const formats: { value: 'same' | OutputFormat; label: string }[] = [
 		{ value: 'same', label: 'Original' },
@@ -20,16 +20,13 @@
 		{ label: 'Max', value: 98, desc: 'Near-lossless' }
 	];
 
-	// Common resize presets
-	const sizePresets = [1920, 1280, 800];
-
 	let isReprocessing = $state(false);
-	let showResizeInput = $state(false);
-	let resizeInputValue = $state('');
 	
 	const hasCompletedImages = $derived(images.items.some(i => i.status === 'completed'));
 	const isLossless = $derived(images.settings.lossless);
-	const maxDimension = $derived(images.settings.maxDimension);
+	const export2x = $derived(images.settings.export2x);
+	const export3x = $derived(images.settings.export3x);
+	const hasScaleExport = $derived(export2x || export3x);
 
 	function handlePresetClick(value: number) {
 		images.updateSettings({ quality: value });
@@ -47,24 +44,12 @@
 		images.updateSettings({ lossless: !images.settings.lossless });
 	}
 
-	function handleResizePreset(size: number) {
-		images.updateSettings({ maxDimension: size });
-		resizeInputValue = size.toString();
+	function handleExport2xToggle() {
+		images.updateSettings({ export2x: !images.settings.export2x });
 	}
 
-	function handleResizeInputChange() {
-		const value = parseInt(resizeInputValue);
-		if (!isNaN(value) && value > 0) {
-			images.updateSettings({ maxDimension: value });
-		} else if (resizeInputValue === '') {
-			images.updateSettings({ maxDimension: null });
-		}
-	}
-
-	function clearResize() {
-		images.updateSettings({ maxDimension: null });
-		resizeInputValue = '';
-		showResizeInput = false;
+	function handleExport3xToggle() {
+		images.updateSettings({ export3x: !images.settings.export3x });
 	}
 
 	async function handleReoptimizeAll() {
@@ -164,52 +149,30 @@
 		<!-- Divider -->
 		<div class="hidden lg:block w-px h-6 bg-surface-700"></div>
 
-		<!-- Resize -->
+		<!-- Multi-scale Export (for SVG → raster) -->
 		<div class="flex items-center gap-2">
-			<button
-				onclick={() => showResizeInput = !showResizeInput}
-				class="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all {maxDimension ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 hover:bg-surface-700/50'}"
-				title={maxDimension ? `Max ${maxDimension}px` : 'Resize images'}
-			>
-				<Maximize2 class="h-4 w-4" />
-				<span class="text-sm font-medium">
-					{#if maxDimension}
-						{maxDimension}px
-					{:else}
-						Resize
-					{/if}
-				</span>
-			</button>
-			
-			{#if showResizeInput}
-				<div class="flex items-center gap-1.5">
-					{#each sizePresets as size}
-						<button
-							onclick={() => handleResizePreset(size)}
-							class="px-2 py-1 text-xs font-medium rounded transition-all {maxDimension === size
-								? 'bg-accent-start text-white'
-								: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
-						>
-							{size}
-						</button>
-					{/each}
-					<input
-						type="number"
-						bind:value={resizeInputValue}
-						onchange={handleResizeInputChange}
-						placeholder="px"
-						class="w-16 px-2 py-1 text-xs font-medium rounded bg-surface-800 border border-surface-600 text-surface-200 placeholder:text-surface-500 focus:border-accent-start focus:outline-none"
-					/>
-					{#if maxDimension}
-						<button
-							onclick={clearResize}
-							class="px-2 py-1 text-xs font-medium rounded text-red-400 hover:bg-red-900/30"
-						>
-							Clear
-						</button>
-					{/if}
-				</div>
-			{/if}
+			<Layers class="h-4 w-4 text-surface-400" />
+			<span class="text-xs font-medium text-surface-500 uppercase tracking-wide">SVG Export</span>
+			<div class="flex gap-1">
+				<button
+					onclick={handleExport2xToggle}
+					class="px-2 py-1 text-xs font-bold rounded transition-all {export2x
+						? 'bg-accent-start text-white'
+						: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
+					title="Also export @2x scale for retina displays"
+				>
+					@2x
+				</button>
+				<button
+					onclick={handleExport3xToggle}
+					class="px-2 py-1 text-xs font-bold rounded transition-all {export3x
+						? 'bg-accent-start text-white'
+						: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
+					title="Also export @3x scale for high-DPI displays"
+				>
+					@3x
+				</button>
+			</div>
 		</div>
 
 		<!-- Spacer -->
