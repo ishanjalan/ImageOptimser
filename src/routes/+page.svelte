@@ -7,7 +7,7 @@
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import BatchSummary from '$lib/components/BatchSummary.svelte';
 	import AnimatedNumber from '$lib/components/AnimatedNumber.svelte';
-	import { images } from '$lib/stores/images.svelte';
+	import { images, formatBytes } from '$lib';
 	import { processImages } from '$lib/utils/compress';
 	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown } from 'lucide-svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
@@ -59,20 +59,6 @@
 		previousCompletedCount = completedCount;
 	});
 
-	// Show toast for errors
-	$effect(() => {
-		if (errorCount > 0) {
-			// Only show once per error occurrence
-		}
-	});
-
-	function formatBytes(bytes: number): string {
-		if (bytes === 0) return '0 B';
-		const k = 1024;
-		const sizes = ['B', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-	}
 
 	async function handleDownloadAll() {
 		const completedImages = images.items.filter((i) => i.status === 'completed' && i.compressedBlob);

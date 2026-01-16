@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { images, type ImageItem, type OutputFormat } from '$lib/stores/images.svelte';
+	import { images, formatBytes, type ImageItem, type OutputFormat } from '$lib';
 	import { downloadImage } from '$lib/utils/download';
 	import { reprocessImage, getOutputFilename } from '$lib/utils/compress';
-	import { addToast } from './Toast.svelte';
+	import { toast } from './Toast.svelte';
 	import CompareSlider from './CompareSlider.svelte';
 	import PreviewModal from './PreviewModal.svelte';
 	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal, ImageIcon, Copy, Square, CheckSquare } from 'lucide-svelte';
@@ -79,14 +79,6 @@
 	const hasMultiScale = $derived(item.scaledOutputs && item.scaledOutputs.length > 1);
 	const scaleLabels = $derived(item.scaledOutputs?.map(o => `@${o.scale}x`).join(' ') || '');
 
-	function formatBytes(bytes: number): string {
-		if (bytes === 0) return '0 B';
-		const k = 1024;
-		const sizes = ['B', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-	}
-
 	function handleRemove() {
 		images.removeItem(item.id);
 	}
@@ -104,10 +96,10 @@
 				[item.compressedBlob.type]: item.compressedBlob
 			});
 			await navigator.clipboard.write([clipboardItem]);
-			addToast('Copied to clipboard!', 'success');
+			toast.success('Copied to clipboard!');
 		} catch (error) {
 			console.error('Failed to copy:', error);
-			addToast('Failed to copy to clipboard', 'error');
+			toast.error('Failed to copy to clipboard');
 		}
 	}
 

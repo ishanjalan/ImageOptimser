@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { images } from '$lib/stores/images.svelte';
+	import { images, formatBytes } from '$lib';
 	import { downloadAllAsZip } from '$lib/utils/download';
 	import { toast } from './Toast.svelte';
 	import AnimatedNumber from './AnimatedNumber.svelte';
@@ -32,14 +32,6 @@
 	const avgTimePerImage = $derived(
 		completedItems.length > 0 ? Math.round((processingTime / completedItems.length) * 1000) : 0
 	);
-
-	function formatBytes(bytes: number): string {
-		if (bytes === 0) return '0 B';
-		const k = 1024;
-		const sizes = ['B', 'KB', 'MB', 'GB'];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-	}
 
 	function formatTime(seconds: number): string {
 		if (seconds < 1) return `${Math.round(seconds * 1000)}ms`;
