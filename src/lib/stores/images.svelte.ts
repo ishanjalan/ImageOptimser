@@ -112,6 +112,7 @@ function createImagesStore() {
 	let items = $state<ImageItem[]>([]);
 	let settings = $state<CompressionSettings>(loadSettings());
 	let batchStats = $state<BatchStats>({ startTime: null, endTime: null, totalImages: 0 });
+	let selectedIds = $state<Set<string>>(new Set());
 
 	function getFormatFromMime(mimeType: string): ImageFormat {
 		const map: Record<string, ImageFormat> = {
@@ -140,6 +141,9 @@ function createImagesStore() {
 		},
 		get batchStats() {
 			return batchStats;
+		},
+		get selectedIds() {
+			return selectedIds;
 		},
 
 		startBatch(count: number) {
@@ -233,6 +237,12 @@ function createImagesStore() {
 				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			}
 			items = items.filter((i) => i.id !== id);
+			// Remove from selection if selected
+			if (selectedIds.has(id)) {
+				const newSet = new Set(selectedIds);
+				newSet.delete(id);
+				selectedIds = newSet;
+			}
 		},
 
 		clearAll() {
@@ -242,6 +252,7 @@ function createImagesStore() {
 				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			});
 			items = [];
+			selectedIds = new Set();
 			batchStats = { startTime: null, endTime: null, totalImages: 0 };
 		},
 
@@ -287,6 +298,44 @@ function createImagesStore() {
 			const [draggedItem] = newItems.splice(draggedIndex, 1);
 			newItems.splice(targetIndex, 0, draggedItem);
 			items = newItems;
+		},
+
+		// Selection methods
+		toggleSelection(id: string) {
+			const newSet = new Set(selectedIds);
+			if (newSet.has(id)) {
+				newSet.delete(id);
+			} else {
+				newSet.add(id);
+			}
+			selectedIds = newSet;
+		},
+
+		selectAll() {
+			selectedIds = new Set(items.map(i => i.id));
+		},
+
+		selectNone() {
+			selectedIds = new Set();
+		},
+
+		isSelected(id: string) {
+			return selectedIds.has(id);
+		},
+
+		getSelectedItems() {
+			return items.filter(i => selectedIds.has(i.id));
+		},
+
+		removeSelected() {
+			const toRemove = items.filter(i => selectedIds.has(i.id));
+			toRemove.forEach(item => {
+				URL.revokeObjectURL(item.originalUrl);
+				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
+				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
+			});
+			items = items.filter(i => !selectedIds.has(i.id));
+			selectedIds = new Set();
 		}
 	};
 }

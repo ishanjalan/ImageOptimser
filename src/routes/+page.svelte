@@ -6,6 +6,7 @@
 	import Settings from '$lib/components/Settings.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import BatchSummary from '$lib/components/BatchSummary.svelte';
+	import AnimatedNumber from '$lib/components/AnimatedNumber.svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { processImages } from '$lib/utils/compress';
 	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown } from 'lucide-svelte';
@@ -285,7 +286,7 @@
 							<Sparkles class="h-6 w-6 text-accent-start" aria-hidden="true" />
 							<span class="text-base text-surface-500">
 								<span class="font-semibold text-surface-900 dark:text-surface-100 text-lg"
-									>{completedCount}</span
+									><AnimatedNumber value={completedCount} format={(n) => Math.round(n).toString()} /></span
 								>
 								of {images.items.length} optimized
 							</span>
@@ -295,13 +296,13 @@
 								<div class="text-base text-surface-500">
 									Saved:
 									<span class="font-mono font-semibold text-accent-start text-lg"
-										>{formatBytes(totalSaved)}</span
+										><AnimatedNumber value={totalSaved} format={formatBytes} /></span
 									>
 								</div>
 								<span
 									class="rounded-full bg-green-500/10 px-3 py-1 text-sm font-bold text-green-500"
 								>
-									-{savingsPercent}%
+									-<AnimatedNumber value={savingsPercent} format={(n) => Math.round(n).toString()} />%
 								</span>
 							</div>
 						{/if}
@@ -354,9 +355,11 @@
 	message="This will remove all {images.items.length} images from the list. This action cannot be undone."
 	confirmText="Clear All"
 	onconfirm={() => {
+		const count = images.items.length;
 		images.clearAll();
 		showClearConfirm = false;
 		showBatchSummary = false;
+		toast.info(`Cleared ${count} image${count !== 1 ? 's' : ''}`);
 	}}
 	oncancel={() => showClearConfirm = false}
 />

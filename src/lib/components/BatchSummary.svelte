@@ -2,6 +2,7 @@
 	import { images } from '$lib/stores/images.svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
 	import { toast } from './Toast.svelte';
+	import AnimatedNumber from './AnimatedNumber.svelte';
 	import { Download, Clock, Zap, HardDrive, TrendingDown, X, CheckCircle } from 'lucide-svelte';
 	import { scale, fade } from 'svelte/transition';
 
@@ -91,8 +92,8 @@
 				</div>
 				<div>
 					<p class="text-xs text-surface-400 uppercase tracking-wide">Saved</p>
-					<p class="text-lg font-bold text-green-500">{formatBytes(totalSaved)}</p>
-					<p class="text-xs text-surface-500">-{savingsPercent}%</p>
+					<p class="text-lg font-bold text-green-500"><AnimatedNumber value={totalSaved} format={formatBytes} duration={800} /></p>
+					<p class="text-xs text-surface-500">-<AnimatedNumber value={savingsPercent} format={(n) => Math.round(n).toString()} />%</p>
 				</div>
 			</div>
 
@@ -103,8 +104,8 @@
 				</div>
 				<div>
 					<p class="text-xs text-surface-400 uppercase tracking-wide">Time</p>
-					<p class="text-lg font-bold text-surface-100">{formatTime(processingTime)}</p>
-					<p class="text-xs text-surface-500">{avgTimePerImage}ms avg</p>
+					<p class="text-lg font-bold text-surface-100"><AnimatedNumber value={processingTime} format={formatTime} duration={800} /></p>
+					<p class="text-xs text-surface-500"><AnimatedNumber value={avgTimePerImage} format={(n) => Math.round(n).toString()} />ms avg</p>
 				</div>
 			</div>
 
@@ -115,7 +116,7 @@
 				</div>
 				<div>
 					<p class="text-xs text-surface-400 uppercase tracking-wide">Speed</p>
-					<p class="text-lg font-bold text-surface-100">{imagesPerSecond}</p>
+					<p class="text-lg font-bold text-surface-100"><AnimatedNumber value={parseFloat(imagesPerSecond)} format={(n) => n.toFixed(1)} duration={800} /></p>
 					<p class="text-xs text-surface-500">images/sec</p>
 				</div>
 			</div>
@@ -127,7 +128,7 @@
 				</div>
 				<div>
 					<p class="text-xs text-surface-400 uppercase tracking-wide">Final Size</p>
-					<p class="text-lg font-bold text-surface-100">{formatBytes(totalCompressedSize)}</p>
+					<p class="text-lg font-bold text-surface-100"><AnimatedNumber value={totalCompressedSize} format={formatBytes} duration={800} /></p>
 					<p class="text-xs text-surface-500">from {formatBytes(totalOriginalSize)}</p>
 				</div>
 			</div>

@@ -5,14 +5,35 @@
 	import { addToast } from './Toast.svelte';
 	import CompareSlider from './CompareSlider.svelte';
 	import PreviewModal from './PreviewModal.svelte';
-	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal, ImageIcon, Copy } from 'lucide-svelte';
+	import { Download, X, AlertCircle, Check, Loader2, ArrowRight, ChevronDown, RotateCcw, SplitSquareHorizontal, ImageIcon, Copy, Square, CheckSquare } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
 
-	let { item }: { item: ImageItem } = $props();
+	let { 
+		item, 
+		showSelectionMode = false,
+		isFocused = false,
+		onFocus
+	}: { 
+		item: ImageItem; 
+		showSelectionMode?: boolean;
+		isFocused?: boolean;
+		onFocus?: () => void;
+	} = $props();
 
 	let showFormatMenu = $state(false);
 	let showCompare = $state(false);
 	let showPreview = $state(false);
+	
+	const isSelected = $derived(images.isSelected(item.id));
+	
+	function handleSelectionToggle(e: MouseEvent) {
+		e.stopPropagation();
+		images.toggleSelection(item.id);
+	}
+	
+	function handleCardClick() {
+		onFocus?.();
+	}
 
 	// Check if Clipboard API is available
 	const canCopyToClipboard = typeof navigator !== 'undefined' && 'clipboard' in navigator && 'write' in navigator.clipboard;
@@ -133,10 +154,27 @@
 </script>
 
 <div
-	class="glass group relative rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-black/10"
+	class="glass group relative rounded-2xl transition-all duration-300 hover:shadow-xl hover:shadow-black/10 hover:scale-[1.02] {isFocused ? 'ring-2 ring-accent-start ring-offset-2 ring-offset-surface-900 shadow-xl shadow-accent-start/20' : ''}"
 	in:scale={{ duration: 200, start: 0.95 }}
 	out:fade={{ duration: 150 }}
+	onclick={handleCardClick}
+	onkeydown={(e) => e.key === 'Enter' && handleCardClick()}
+	role="button"
+	tabindex="-1"
 >
+	<!-- Selection checkbox -->
+	<button
+		onclick={handleSelectionToggle}
+		class="absolute -top-2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-lg transition-all {isSelected ? 'bg-accent-start text-white opacity-100' : 'bg-surface-200 text-surface-500 dark:bg-surface-700'} {showSelectionMode || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+		aria-label={isSelected ? 'Deselect image' : 'Select image'}
+	>
+		{#if isSelected}
+			<CheckSquare class="h-4 w-4" />
+		{:else}
+			<Square class="h-4 w-4" />
+		{/if}
+	</button>
+
 	<!-- Remove button -->
 	<button
 		onclick={handleRemove}
@@ -152,7 +190,7 @@
 		tabindex="0"
 		onclick={() => (item.status === 'completed' && item.compressedUrl) ? showCompare = true : (canDisplayOriginal ? showPreview = true : null)}
 		onkeydown={(e) => e.key === 'Enter' && ((item.status === 'completed' && item.compressedUrl) ? showCompare = true : (canDisplayOriginal ? showPreview = true : null))}
-		draggable={canDrag}
+		draggable={canDrag ? true : false}
 		ondragstart={handleDragStart}
 		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none {canDrag ? 'cursor-grab active:cursor-grabbing' : ''}"
 		aria-label={canDrag ? 'Drag to save or click to compare' : 'Compare or preview image'}
@@ -173,8 +211,45 @@
 			</div>
 		{/if}
 		{#if item.status === 'processing'}
-			<div class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-				<Loader2 class="h-10 w-10 text-white animate-spin" />
+			<div class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 backdrop-blur-sm">
+				<!-- Circular progress indicator -->
+				<div class="relative h-16 w-16">
+					<svg class="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
+						<!-- Background circle -->
+						<circle
+							cx="32"
+							cy="32"
+							r="28"
+							fill="none"
+							stroke="rgba(255,255,255,0.2)"
+							stroke-width="4"
+						/>
+						<!-- Progress circle -->
+						<circle
+							cx="32"
+							cy="32"
+							r="28"
+							fill="none"
+							stroke="url(#progressGradient)"
+							stroke-width="4"
+							stroke-linecap="round"
+							stroke-dasharray={2 * Math.PI * 28}
+							stroke-dashoffset={2 * Math.PI * 28 * (1 - item.progress / 100)}
+							class="transition-all duration-300"
+						/>
+						<defs>
+							<linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+								<stop offset="0%" stop-color="#10b981" />
+								<stop offset="100%" stop-color="#34d399" />
+							</linearGradient>
+						</defs>
+					</svg>
+					<!-- Percentage text -->
+					<span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">
+						{Math.round(item.progress)}%
+					</span>
+				</div>
+				<span class="text-xs font-medium text-white/80">Optimizing...</span>
 			</div>
 		{/if}
 		
@@ -193,11 +268,49 @@
 				{/if}
 			</div>
 			
-			<!-- Drag hint on hover -->
-			<div class="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-				<span class="rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm">
-					Drag to save
-				</span>
+			<!-- Enhanced hover overlay -->
+			<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+			
+			<!-- Hover info at bottom -->
+			<div class="absolute bottom-0 left-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+				<div class="flex items-end justify-between">
+					<div class="space-y-1">
+						<div class="text-[10px] font-medium text-white/70 uppercase tracking-wide">Original</div>
+						<div class="text-xs font-mono text-white">
+							{formatBytes(item.originalSize)} · {item.format.toUpperCase()}
+						</div>
+					</div>
+					<span class="rounded-full bg-white/20 backdrop-blur-sm px-2 py-1 text-[10px] font-medium text-white">
+						Drag to save
+					</span>
+				</div>
+			</div>
+			
+			<!-- Quick actions on hover (center) -->
+			<div class="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+				<button
+					onclick={(e) => { e.stopPropagation(); showCompare = true; }}
+					class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/30 hover:scale-110 pointer-events-auto"
+					title="Compare before/after"
+				>
+					<SplitSquareHorizontal class="h-5 w-5" />
+				</button>
+				<button
+					onclick={(e) => { e.stopPropagation(); handleDownload(); }}
+					class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/30 hover:scale-110 pointer-events-auto"
+					title="Download"
+				>
+					<Download class="h-5 w-5" />
+				</button>
+				{#if canCopyToClipboard}
+					<button
+						onclick={(e) => { e.stopPropagation(); handleCopy(); }}
+						class="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm text-white transition-all hover:bg-white/30 hover:scale-110 pointer-events-auto"
+						title="Copy to clipboard"
+					>
+						<Copy class="h-5 w-5" />
+					</button>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -231,11 +344,16 @@
 		{#if item.status === 'pending'}
 			<p class="text-sm text-surface-500">Waiting...</p>
 		{:else if item.status === 'processing'}
-			<div class="h-2 w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
-				<div
-					class="h-full rounded-full bg-gradient-to-r from-accent-start to-accent-end transition-all duration-300"
-					style="width: {item.progress}%"
-				></div>
+			<div class="flex items-center gap-3">
+				<div class="flex-1 h-2 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
+					<div
+						class="h-full rounded-full bg-gradient-to-r from-accent-start to-accent-end transition-all duration-300"
+						style="width: {item.progress}%"
+					></div>
+				</div>
+				<span class="text-xs font-mono font-medium text-surface-500 tabular-nums w-8">
+					{Math.round(item.progress)}%
+				</span>
 			</div>
 		{:else if item.status === 'error'}
 			<div class="flex items-center justify-between">
