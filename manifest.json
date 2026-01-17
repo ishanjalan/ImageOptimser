@@ -1,0 +1,50 @@
+{
+	"name": "Squish - Image Optimizer",
+	"short_name": "Squish",
+	"description": "Free online image optimizer - compress JPEG, PNG, WebP, AVIF, HEIC and SVG files instantly in your browser. 100% private, no uploads.",
+	"start_url": "/Squish/",
+	"scope": "/Squish/",
+	"id": "/Squish/",
+	"display": "standalone",
+	"display_override": ["window-controls-overlay", "standalone"],
+	"background_color": "#09090b",
+	"theme_color": "#10b981",
+	"orientation": "any",
+	"icons": [
+		{
+			"src": "/Squish/icon-192.svg",
+			"sizes": "192x192",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/Squish/icon-512.svg",
+			"sizes": "512x512",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/Squish/icon-192.svg",
+			"sizes": "192x192",
+			"type": "image/svg+xml",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/Squish/icon-512.svg",
+			"sizes": "512x512",
+			"type": "image/svg+xml",
+			"purpose": "maskable"
+		}
+	],
+	"categories": ["utilities", "productivity", "photo"],
+	"screenshots": [],
+	"shortcuts": [
+		{
+			"name": "Optimize Images",
+			"url": "/Squish/",
+			"description": "Open Squish to optimize images"
+		}
+	],
+	"prefer_related_applications": false,
+	"handle_links": "preferred"
+}
