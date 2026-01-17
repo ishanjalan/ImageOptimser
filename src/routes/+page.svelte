@@ -99,7 +99,6 @@
 			deletedItems.forEach(item => {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
-				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			});
 		}
 		
@@ -122,7 +121,6 @@
 			deletedItems.forEach(item => {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
-				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			});
 			deletedItems = [];
 			undoTimeout = null;

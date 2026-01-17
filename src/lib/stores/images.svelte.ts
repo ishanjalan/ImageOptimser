@@ -2,24 +2,15 @@ export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'jxl' | 'svg' | 'he
 export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'jxl' | 'svg'; // HEIC is input-only
 export type ImageStatus = 'pending' | 'processing' | 'completed' | 'error';
 
-export interface ScaledOutput {
-	scale: number; // 1, 2, or 3
-	blob: Blob;
-	size: number;
-	url: string;
-	width: number;
-	height: number;
-}
-
 export interface ImageItem {
 	id: string;
 	file: File;
 	name: string;
 	originalSize: number;
-	compressedSize?: number; // Total size of all outputs
+	compressedSize?: number;
 	originalUrl: string;
-	compressedUrl?: string; // URL for 1x output (primary preview)
-	compressedBlob?: Blob; // 1x output blob
+	compressedUrl?: string;
+	compressedBlob?: Blob;
 	format: ImageFormat;
 	outputFormat: OutputFormat;
 	status: ImageStatus;
@@ -29,16 +20,14 @@ export interface ImageItem {
 	height?: number;
 	// For SVG: tracks WebP alternative size for "complex SVG" warning
 	webpAlternativeSize?: number;
-	// Multi-scale outputs (for SVG → raster conversions)
-	scaledOutputs?: ScaledOutput[];
 	// Target size mode: tracking info
-	targetSizeAttempt?: number; // Current binary search iteration
-	targetSizeMaxAttempts?: number; // Total iterations
-	achievedQuality?: number; // Final quality used
-	targetSizeWarning?: string; // Warning if target not achievable
+	targetSizeAttempt?: number;
+	targetSizeMaxAttempts?: number;
+	achievedQuality?: number;
+	targetSizeWarning?: string;
 	// Resize info
-	resizedWidth?: number; // Output width after resize
-	resizedHeight?: number; // Output height after resize
+	resizedWidth?: number;
+	resizedHeight?: number;
 }
 
 export type ResizeMode = 'percentage' | 'dimensions' | 'fit';
@@ -48,16 +37,13 @@ export interface CompressionSettings {
 	outputFormat: 'same' | OutputFormat;
 	stripMetadata: boolean;
 	lossless: boolean;
-	// Multi-scale export for SVG → raster (always includes 1x)
-	export2x: boolean;
-	export3x: boolean;
 	// Target file size mode
 	targetSizeMode: boolean;
-	targetSizeKB: number; // Target size in KB (e.g., 500)
+	targetSizeKB: number;
 	// Resize settings
 	resizeEnabled: boolean;
 	resizeMode: ResizeMode;
-	resizePercentage: number; // 50 = 50%
+	resizePercentage: number;
 	resizeMaxWidth: number;
 	resizeMaxHeight: number;
 	maintainAspectRatio: boolean;
@@ -101,8 +87,6 @@ function getDefaultSettings(): CompressionSettings {
 		outputFormat: 'webp', // Best compression + universal support (web, Android, iOS 14+)
 		stripMetadata: true,
 		lossless: false,
-		export2x: false, // Multi-scale disabled by default
-		export3x: false,
 		targetSizeMode: false, // Quality mode by default
 		targetSizeKB: 500, // Default target: 500KB
 		// Resize defaults
@@ -264,8 +248,6 @@ function createImagesStore() {
 			if (item) {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
-				// Revoke scaled output URLs
-				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			}
 			items = items.filter((i) => i.id !== id);
 			// Remove from selection if selected
@@ -280,7 +262,6 @@ function createImagesStore() {
 			items.forEach((item) => {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
-				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			});
 			items = [];
 			selectedIds = new Set();
@@ -377,7 +358,6 @@ function createImagesStore() {
 			toRemove.forEach(item => {
 				URL.revokeObjectURL(item.originalUrl);
 				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
-				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
 			});
 			items = items.filter(i => !selectedIds.has(i.id));
 			selectedIds = new Set();

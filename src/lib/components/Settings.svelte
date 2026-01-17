@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { images, type OutputFormat, type ResizeMode } from '$lib/stores/images.svelte';
 	import { reprocessAllImages } from '$lib/utils/compress';
-	import { Shield, RefreshCw, Sparkles, Layers, Sliders, ChevronDown, ChevronUp, Info, Maximize2 } from 'lucide-svelte';
+	import { Shield, RefreshCw, Sparkles, Sliders, ChevronDown, ChevronUp, Info, Maximize2 } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
 	import FormatGuide from './FormatGuide.svelte';
 	import ConfirmModal from './ConfirmModal.svelte';
@@ -40,8 +40,6 @@
 	
 	const hasCompletedImages = $derived(images.items.some(i => i.status === 'completed'));
 	const isLossless = $derived(images.settings.lossless);
-	const export2x = $derived(images.settings.export2x);
-	const export3x = $derived(images.settings.export3x);
 	
 	// Resize settings
 	const resizeEnabled = $derived(images.settings.resizeEnabled);
@@ -49,11 +47,6 @@
 	const resizePercentage = $derived(images.settings.resizePercentage);
 	const resizeMaxWidth = $derived(images.settings.resizeMaxWidth);
 	const resizeMaxHeight = $derived(images.settings.resizeMaxHeight);
-	
-	// Only show SVG export options when there are SVG files that will be converted to raster
-	const hasSvgToRaster = $derived(
-		images.items.some(i => i.format === 'svg' && i.outputFormat !== 'svg')
-	);
 
 	const currentPreset = $derived(presets.find(p => p.value === images.settings.quality));
 
@@ -71,14 +64,6 @@
 
 	function handleLosslessToggle() {
 		images.updateSettings({ lossless: !images.settings.lossless });
-	}
-
-	function handleExport2xToggle() {
-		images.updateSettings({ export2x: !images.settings.export2x });
-	}
-
-	function handleExport3xToggle() {
-		images.updateSettings({ export3x: !images.settings.export3x });
 	}
 
 	function toggleAdvanced() {
@@ -366,37 +351,6 @@
 						</div>
 					{/if}
 				</div>
-
-				<!-- Multi-scale Export (only shown for SVG → raster conversions) -->
-				{#if hasSvgToRaster}
-					<div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-800/30">
-						<Layers class="h-4 w-4 text-surface-400" />
-						<div class="flex flex-col items-start">
-							<span class="text-sm font-medium text-surface-300">SVG Scale Export</span>
-							<span class="text-[10px] text-surface-500">Generate @2x and @3x versions</span>
-						</div>
-						<div class="flex gap-1 ml-2">
-							<button
-								onclick={handleExport2xToggle}
-								class="px-3 py-1.5 text-xs font-bold rounded-md transition-all {export2x
-									? 'bg-accent-start text-white'
-									: 'text-surface-400 bg-surface-700/50 hover:text-surface-200'}"
-								title="Also export @2x scale for retina displays"
-							>
-								@2x
-							</button>
-							<button
-								onclick={handleExport3xToggle}
-								class="px-3 py-1.5 text-xs font-bold rounded-md transition-all {export3x
-									? 'bg-accent-start text-white'
-									: 'text-surface-400 bg-surface-700/50 hover:text-surface-200'}"
-								title="Also export @3x scale for high-DPI displays"
-							>
-								@3x
-							</button>
-						</div>
-					</div>
-				{/if}
 			</div>
 		{/if}
 	</div>

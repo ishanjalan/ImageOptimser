@@ -74,10 +74,6 @@
 		item.status === 'completed' &&
 		item.webpAlternativeSize // Set only when SVG > 3× WebP
 	);
-	
-	// Check if we have multi-scale outputs (SVG → raster with 2x/3x enabled)
-	const hasMultiScale = $derived(item.scaledOutputs && item.scaledOutputs.length > 1);
-	const scaleLabels = $derived(item.scaledOutputs?.map(o => `@${o.scale}x`).join(' ') || '');
 
 	function handleRemove() {
 		images.removeItem(item.id);
@@ -331,11 +327,6 @@
 		<div class="flex items-center gap-2 mb-3">
 			{#if item.width && item.height}
 				<p class="text-xs text-surface-400">{item.width} × {item.height}</p>
-			{/if}
-			{#if hasMultiScale}
-				<span class="text-[10px] font-bold text-accent-start bg-accent-start/10 px-1.5 py-0.5 rounded">
-					{scaleLabels}
-				</span>
 			{/if}
 		</div>
 

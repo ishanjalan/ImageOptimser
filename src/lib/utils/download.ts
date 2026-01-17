@@ -19,32 +19,8 @@ export function downloadBlob(blob: Blob, filename: string) {
 
 export function downloadImage(item: ImageItem) {
 	if (!item.compressedBlob) return;
-
-	// If we have multi-scale outputs, download as ZIP
-	if (item.scaledOutputs && item.scaledOutputs.length > 1) {
-		downloadMultiScaleAsZip(item);
-		return;
-	}
-
-	// Single output - download directly
 	const filename = getOutputFilename(item.name, item.outputFormat);
 	downloadBlob(item.compressedBlob, filename);
-}
-
-// Download multi-scale outputs as a ZIP for a single image
-async function downloadMultiScaleAsZip(item: ImageItem) {
-	if (!item.scaledOutputs) return;
-
-	const zip = new JSZip();
-	const baseName = item.name.replace(/\.[^/.]+$/, '');
-
-	for (const output of item.scaledOutputs) {
-		const filename = getOutputFilename(item.name, item.outputFormat, output.scale);
-		zip.file(filename, output.blob);
-	}
-
-	const content = await zip.generateAsync({ type: 'blob' });
-	downloadBlob(content, `${baseName}-scales.zip`);
 }
 
 export interface ZipProgressCallback {
@@ -61,23 +37,7 @@ export async function downloadAllAsZip(
 	const usedNames = new Map<string, number>();
 
 	for (const item of items) {
-		// Handle multi-scale outputs
-		if (item.scaledOutputs && item.scaledOutputs.length > 0) {
-			for (const output of item.scaledOutputs) {
-				let filename = getOutputFilename(item.name, item.outputFormat, output.scale);
-
-				// Handle duplicate filenames
-				const count = usedNames.get(filename) || 0;
-				if (count > 0) {
-					const ext = filename.lastIndexOf('.');
-					filename = `${filename.slice(0, ext)}-${count}${filename.slice(ext)}`;
-				}
-				usedNames.set(filename, count + 1);
-
-				zip.file(filename, output.blob);
-			}
-		} else if (item.compressedBlob) {
-			// Single output
+		if (item.compressedBlob) {
 			let filename = getOutputFilename(item.name, item.outputFormat);
 
 			// Handle duplicate filenames
@@ -131,27 +91,7 @@ export async function downloadWithFileSystemAPI(items: ImageItem[]): Promise<voi
 	const usedNames = new Map<string, number>();
 
 	for (const item of items) {
-		// Handle multi-scale outputs
-		if (item.scaledOutputs && item.scaledOutputs.length > 0) {
-			for (const output of item.scaledOutputs) {
-				let filename = getOutputFilename(item.name, item.outputFormat, output.scale);
-
-				// Handle duplicate filenames
-				const count = usedNames.get(filename) || 0;
-				if (count > 0) {
-					const ext = filename.lastIndexOf('.');
-					filename = `${filename.slice(0, ext)}-${count}${filename.slice(ext)}`;
-				}
-				usedNames.set(filename, count + 1);
-
-				// Create file and write content
-				const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-				const writable = await fileHandle.createWritable();
-				await writable.write(output.blob);
-				await writable.close();
-			}
-		} else if (item.compressedBlob) {
-			// Single output
+		if (item.compressedBlob) {
 			let filename = getOutputFilename(item.name, item.outputFormat);
 
 			// Handle duplicate filenames
