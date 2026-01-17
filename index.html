@@ -3,9 +3,12 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="description" content="Free online image optimizer - compress JPEG, PNG, WebP, AVIF, and SVG files instantly in your browser. 100% private, no uploads." />
+		<meta
+			name="description"
+			content="Free online image optimizer - compress JPEG, PNG, WebP, AVIF, and SVG files instantly in your browser. 100% private, no uploads."
+		/>
 		<meta name="theme-color" content="#09090b" />
-		
+
 		<!-- PWA -->
 		<link rel="manifest" href="/ImageOptimser/manifest.json" />
 		<meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,21 +16,35 @@
 		<meta name="apple-mobile-web-app-title" content="Squish" />
 		<link rel="apple-touch-icon" href="/ImageOptimser/icon-192.svg" />
 		<link rel="icon" type="image/svg+xml" href="/ImageOptimser/icon-192.svg" />
-		
+
 		<!-- Optimized Font Loading -->
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap">
-		<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="preload"
+			as="style"
+			href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap"
+		/>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap"
+			rel="stylesheet"
+			media="print"
+			onload="this.media = 'all'"
+		/>
 		<noscript>
-			<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+			<link
+				href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap"
+				rel="stylesheet"
+			/>
 		</noscript>
-		
+
 		<!-- Critical CSS for instant loader -->
 		<style>
 			/* Prevent FOUC */
-			html { background: #09090b; }
-			
+			html {
+				background: #09090b;
+			}
+
 			/* Loader styles */
 			#app-loader {
 				position: fixed;
@@ -38,22 +55,25 @@
 				align-items: center;
 				justify-content: center;
 				background: #09090b;
-				font-family: system-ui, -apple-system, sans-serif;
+				font-family:
+					system-ui,
+					-apple-system,
+					sans-serif;
 				transition: opacity 0.3s ease-out;
 			}
-			
+
 			#app-loader.fade-out {
 				opacity: 0;
 				pointer-events: none;
 			}
-			
+
 			#app-loader .logo {
 				width: 64px;
 				height: 64px;
 				margin-bottom: 24px;
 				animation: pulse 1.5s ease-in-out infinite;
 			}
-			
+
 			#app-loader .spinner {
 				width: 40px;
 				height: 40px;
@@ -62,36 +82,45 @@
 				border-radius: 50%;
 				animation: spin 0.8s linear infinite;
 			}
-			
+
 			#app-loader .text {
 				margin-top: 16px;
 				color: #a1a1aa;
 				font-size: 14px;
 				font-weight: 500;
 			}
-			
+
 			@keyframes spin {
-				to { transform: rotate(360deg); }
+				to {
+					transform: rotate(360deg);
+				}
 			}
-			
+
 			@keyframes pulse {
-				0%, 100% { opacity: 1; transform: scale(1); }
-				50% { opacity: 0.7; transform: scale(0.95); }
+				0%,
+				100% {
+					opacity: 1;
+					transform: scale(1);
+				}
+				50% {
+					opacity: 0.7;
+					transform: scale(0.95);
+				}
 			}
-			
+
 			/* Hide loader when app is ready */
 			.app-loaded #app-loader {
 				display: none;
 			}
 		</style>
+
 		
-		
-		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/entry/start.5MDgTmk0.js">
-		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/CJLQBxR9.js">
+		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/entry/start.D8K3OZye.js">
+		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/BnrEpciR.js">
 		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/DU-CTS00.js">
-		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/CwzRrMAm.js">
+		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/CDxvN-OU.js">
 		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/DfRwAD58.js">
-		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/entry/app.CCkS_aVD.js">
+		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/entry/app.B1fm2Obj.js">
 		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/Bec4lXZ-.js">
 		<link rel="modulepreload" href="/ImageOptimser/_app/immutable/chunks/DIJPmPig.js">
 	</head>
@@ -99,23 +128,29 @@
 		<!-- Instant loader shown while JS loads -->
 		<div id="app-loader" aria-label="Loading application">
 			<svg class="logo" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<rect width="100" height="100" rx="20" fill="url(#gradient)"/>
-				<path d="M30 50L45 65L70 35" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+				<rect width="100" height="100" rx="20" fill="url(#gradient)" />
+				<path
+					d="M30 50L45 65L70 35"
+					stroke="white"
+					stroke-width="8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				/>
 				<defs>
 					<linearGradient id="gradient" x1="0" y1="0" x2="100" y2="100">
-						<stop offset="0%" stop-color="#10b981"/>
-						<stop offset="100%" stop-color="#06b6d4"/>
+						<stop offset="0%" stop-color="#10b981" />
+						<stop offset="100%" stop-color="#06b6d4" />
 					</linearGradient>
 				</defs>
 			</svg>
 			<div class="spinner"></div>
 			<p class="text">Loading Squish...</p>
 		</div>
-		
+
 		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_rwssty = {
+					__sveltekit_eefnbm = {
 						base: "/ImageOptimser",
 						assets: "/ImageOptimser"
 					};
@@ -123,15 +158,15 @@
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("/ImageOptimser/_app/immutable/entry/start.5MDgTmk0.js"),
-						import("/ImageOptimser/_app/immutable/entry/app.CCkS_aVD.js")
+						import("/ImageOptimser/_app/immutable/entry/start.D8K3OZye.js"),
+						import("/ImageOptimser/_app/immutable/entry/app.B1fm2Obj.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element);
 					});
 				}
 			</script>
 		</div>
-		
+
 		<!-- Remove loader when app hydrates -->
 		<script>
 			// Hide loader as soon as possible
@@ -142,7 +177,7 @@
 					setTimeout(() => loader.remove(), 300);
 				}
 			});
-			
+
 			// Fallback: remove after 5 seconds max
 			setTimeout(() => {
 				const loader = document.getElementById('app-loader');
@@ -152,12 +187,13 @@
 				}
 			}, 5000);
 		</script>
-		
+
 		<!-- Service Worker Registration -->
 		<script>
 			if ('serviceWorker' in navigator) {
 				window.addEventListener('load', () => {
-					navigator.serviceWorker.register('/ImageOptimser/sw.js', { scope: '/ImageOptimser/' })
+					navigator.serviceWorker
+						.register('/ImageOptimser/sw.js', { scope: '/ImageOptimser/' })
 						.then((registration) => {
 							console.log('SW registered:', registration.scope);
 							registration.addEventListener('updatefound', () => {
