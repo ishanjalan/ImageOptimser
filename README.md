@@ -20,11 +20,11 @@ Powered by the latest image compression technology via [icodec](https://github.c
 - **HEIC Input** — iPhone photo support (converted to WebP/AVIF/JXL)
 
 ### 🎯 Smart Defaults
-- **Quality Presets** — Tiny (50%), Web (75%), Social (85%), High (92%), Max (98%)
+- **Quality Presets** — Compact (60%), Balanced (80%), Quality (95%)
 - **Format Conversion** — Convert between JPEG, PNG, WebP, AVIF, JPEG XL, and SVG
 - **Lossless Mode** — Preserve perfect quality when needed
 - **Strip EXIF** — Remove metadata for smaller files and privacy
-- **Resize** — Max dimension presets (1920, 1280, 800px) with aspect ratio preservation
+- **Resize** — Scale by percentage or max dimensions with aspect ratio preservation
 
 ### 🚀 Batch Processing
 - Process hundreds of images simultaneously

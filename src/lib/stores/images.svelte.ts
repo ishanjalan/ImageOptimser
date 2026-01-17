@@ -97,7 +97,7 @@ function saveSettings(settings: CompressionSettings) {
 
 function getDefaultSettings(): CompressionSettings {
 	return {
-		quality: 75, // "Web" preset - optimal for web, Android, iOS
+		quality: 80, // "Balanced" preset - best of both worlds
 		outputFormat: 'webp', // Best compression + universal support (web, Android, iOS 14+)
 		stripMetadata: true,
 		lossless: false,

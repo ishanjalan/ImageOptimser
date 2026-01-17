@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { images, type OutputFormat, type ResizeMode } from '$lib/stores/images.svelte';
 	import { reprocessAllImages } from '$lib/utils/compress';
-	import { Settings2, Shield, RefreshCw, Sparkles, Layers, Sliders, Target, ChevronDown, ChevronUp, Info, Maximize2 } from 'lucide-svelte';
+	import { Shield, RefreshCw, Sparkles, Layers, Sliders, ChevronDown, ChevronUp, Info, Maximize2 } from 'lucide-svelte';
 	import { slide } from 'svelte/transition';
 	import FormatGuide from './FormatGuide.svelte';
 	import ConfirmModal from './ConfirmModal.svelte';
@@ -26,51 +26,36 @@
 		{ value: 'png', label: 'PNG' },
 		{ value: 'webp', label: 'WebP' },
 		{ value: 'avif', label: 'AVIF' },
-		{ value: 'jxl', label: 'JXL', title: 'JPEG XL - newest format with best quality' }
+		{ value: 'jxl', label: 'JXL', title: 'JPEG XL - best quality & progressive loading' }
 	];
 
-	// Quality presets based on common use cases
+	// Simplified quality presets - 3 clear use cases
 	const presets = [
-		{ label: 'Tiny', value: 50, desc: 'Maximum compression', recommended: false },
-		{ label: 'Web', value: 75, desc: 'Recommended for most uses', recommended: true },
-		{ label: 'Social', value: 85, desc: 'Instagram, Twitter, Facebook', recommended: false },
-		{ label: 'High', value: 92, desc: 'Print-ready quality', recommended: false },
-		{ label: 'Max', value: 98, desc: 'Near-lossless quality', recommended: false }
-	];
-
-	// Target size presets
-	const sizePresets = [
-		{ label: '100 KB', value: 100 },
-		{ label: '250 KB', value: 250 },
-		{ label: '500 KB', value: 500 },
-		{ label: '1 MB', value: 1024 },
-		{ label: '2 MB', value: 2048 }
+		{ label: 'Compact', value: 60, desc: 'Smallest files — messaging, email', icon: '📦' },
+		{ label: 'Balanced', value: 80, desc: 'Best of both worlds', icon: '⚖️', recommended: true },
+		{ label: 'Quality', value: 95, desc: 'Archival, printing', icon: '✨' }
 	];
 
 	let isReprocessing = $state(false);
-	let customSizeInput = $state('');
 	
 	const hasCompletedImages = $derived(images.items.some(i => i.status === 'completed'));
 	const isLossless = $derived(images.settings.lossless);
-	const isTargetSizeMode = $derived(images.settings.targetSizeMode);
-	const targetSizeKB = $derived(images.settings.targetSizeKB);
 	const export2x = $derived(images.settings.export2x);
 	const export3x = $derived(images.settings.export3x);
-	const hasScaleExport = $derived(export2x || export3x);
+	
 	// Resize settings
 	const resizeEnabled = $derived(images.settings.resizeEnabled);
 	const resizeMode = $derived(images.settings.resizeMode);
 	const resizePercentage = $derived(images.settings.resizePercentage);
 	const resizeMaxWidth = $derived(images.settings.resizeMaxWidth);
 	const resizeMaxHeight = $derived(images.settings.resizeMaxHeight);
-	const maintainAspectRatio = $derived(images.settings.maintainAspectRatio);
+	
 	// Only show SVG export options when there are SVG files that will be converted to raster
 	const hasSvgToRaster = $derived(
 		images.items.some(i => i.format === 'svg' && i.outputFormat !== 'svg')
 	);
 
-	// Check if current target size matches a preset
-	const currentSizePreset = $derived(sizePresets.find(p => p.value === targetSizeKB));
+	const currentPreset = $derived(presets.find(p => p.value === images.settings.quality));
 
 	function handlePresetClick(value: number) {
 		images.updateSettings({ quality: value });
@@ -94,23 +79,6 @@
 
 	function handleExport3xToggle() {
 		images.updateSettings({ export3x: !images.settings.export3x });
-	}
-
-	function handleModeToggle(targetSize: boolean) {
-		images.updateSettings({ targetSizeMode: targetSize });
-	}
-
-	function handleSizePresetClick(value: number) {
-		images.updateSettings({ targetSizeKB: value });
-		customSizeInput = '';
-	}
-
-	function handleCustomSizeChange(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const value = parseInt(input.value, 10);
-		if (!isNaN(value) && value > 0) {
-			images.updateSettings({ targetSizeKB: value });
-		}
 	}
 
 	function toggleAdvanced() {
@@ -152,10 +120,6 @@
 		}
 	}
 
-	function handleAspectRatioToggle() {
-		images.updateSettings({ maintainAspectRatio: !images.settings.maintainAspectRatio });
-	}
-
 	function handleReoptimizeClick() {
 		const count = images.items.filter(i => i.status === 'completed').length;
 		if (count > 5) {
@@ -171,8 +135,6 @@
 		await reprocessAllImages();
 		isReprocessing = false;
 	}
-
-	const currentPreset = $derived(presets.find(p => p.value === images.settings.quality));
 </script>
 
 <div class="glass mb-6 sm:mb-8 rounded-2xl p-4 sm:p-6">
@@ -185,101 +147,46 @@
 			</div>
 		{/if}
 		
-		<!-- Row 1: Compression & Format -->
-		<div class="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 sm:gap-x-6 sm:gap-y-4">
-			<!-- Compression Section -->
-			<div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-				<span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Compression</span>
+		<!-- Row 1: Quality & Format -->
+		<div class="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6">
+			<!-- Quality Section -->
+			<div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+				<span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Quality</span>
 				
-				<div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-800/50">
-					<!-- Mode Toggle: Quality vs Size -->
-					<div class="flex gap-0.5 p-0.5 rounded-lg bg-surface-700/50">
-						<button
-							onclick={() => handleModeToggle(false)}
-							class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all {!isTargetSizeMode
-								? 'bg-surface-600 text-white shadow-sm'
-								: 'text-surface-400 hover:text-surface-200'}"
-							title="Set quality level"
-						>
-							<Sparkles class="h-3 w-3" />
-							Quality
-						</button>
-						<button
-							onclick={() => handleModeToggle(true)}
-							class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all {isTargetSizeMode
-								? 'bg-surface-600 text-white shadow-sm'
-								: 'text-surface-400 hover:text-surface-200'}"
-							title="Set target file size"
-						>
-							<Target class="h-3 w-3" />
-							Size
-						</button>
+				{#if !isLossless}
+					<div class="flex items-center gap-1 p-1 rounded-xl bg-surface-800/50">
+						{#each presets as preset}
+							<button
+								onclick={() => handlePresetClick(preset.value)}
+								class="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all {images.settings.quality === preset.value
+									? 'bg-accent-start text-white shadow-md'
+									: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
+								title="{preset.desc} ({preset.value}%)"
+							>
+								<span class="text-base">{preset.icon}</span>
+								<span>{preset.label}</span>
+								{#if preset.recommended && images.settings.quality !== preset.value}
+									<span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-accent-start animate-pulse"></span>
+								{/if}
+							</button>
+						{/each}
 					</div>
-
-					<div class="w-px h-5 bg-surface-600 mx-1"></div>
-
-					{#if !isTargetSizeMode}
-						<!-- Quality Mode -->
-						{#if !isLossless}
-							<div class="flex flex-wrap gap-1">
-								{#each presets as preset}
-									<button
-										onclick={() => handlePresetClick(preset.value)}
-										class="relative px-2 sm:px-3 py-2 text-sm font-medium rounded-md transition-all {images.settings.quality === preset.value
-											? 'bg-accent-start text-white shadow-sm'
-											: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
-										title="{preset.desc} ({preset.value}%)"
-									>
-										{preset.label}
-										{#if preset.recommended && images.settings.quality !== preset.value}
-											<span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-accent-start"></span>
-										{/if}
-									</button>
-								{/each}
-							</div>
-							{#if currentPreset}
-								<span class="text-xs text-surface-500 tabular-nums ml-1 hidden sm:inline">{currentPreset.value}%</span>
-							{/if}
-						{:else}
-							<span class="text-xs text-surface-500 italic">Quality disabled in lossless mode</span>
-						{/if}
-					{:else}
-						<!-- Target Size Mode -->
-						<div class="flex flex-wrap gap-1">
-							{#each sizePresets as preset}
-								<button
-									onclick={() => handleSizePresetClick(preset.value)}
-									class="px-2.5 py-2 text-sm font-medium rounded-md transition-all {targetSizeKB === preset.value
-										? 'bg-accent-start text-white shadow-sm'
-										: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
-								>
-									{preset.label}
-								</button>
-							{/each}
-						</div>
-						<div class="w-px h-5 bg-surface-600 mx-1"></div>
-						<!-- Custom size input -->
-						<div class="flex items-center gap-1.5">
-							<input
-								type="number"
-								min="10"
-								max="10000"
-								placeholder="Custom"
-								value={currentSizePreset ? '' : targetSizeKB}
-								onchange={handleCustomSizeChange}
-								class="w-20 px-2 py-1.5 text-sm font-medium rounded-md bg-surface-700 text-surface-200 placeholder:text-surface-500 border border-surface-600 focus:border-accent-start focus:outline-none"
-							/>
-							<span class="text-xs text-surface-500">KB</span>
-						</div>
+					{#if currentPreset}
+						<span class="text-xs text-surface-500 tabular-nums hidden sm:inline">{currentPreset.value}%</span>
 					{/if}
-				</div>
+				{:else}
+					<div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-800/50">
+						<Sparkles class="h-4 w-4 text-accent-start" />
+						<span class="text-sm text-surface-300">Lossless mode — perfect quality</span>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Divider -->
-			<div class="hidden md:block w-px h-8 bg-surface-700/50"></div>
+			<div class="hidden lg:block w-px h-10 bg-surface-700/50"></div>
 
 			<!-- Format Section -->
-			<div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+			<div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
 				<div class="flex items-center gap-1.5">
 					<span class="text-xs font-semibold text-surface-500 uppercase tracking-wider">Format</span>
 					<button
@@ -291,12 +198,12 @@
 						<Info class="h-3.5 w-3.5" />
 					</button>
 				</div>
-				<div class="flex flex-wrap gap-1 px-2 py-1.5 rounded-xl bg-surface-800/50">
+				<div class="flex flex-wrap gap-1 p-1 rounded-xl bg-surface-800/50">
 					{#each formats as format}
 						<button
 							onclick={() => handleFormatChange(format.value)}
-							class="min-h-[44px] px-3 py-2 text-sm font-medium rounded-md transition-all {images.settings.outputFormat === format.value
-								? 'bg-accent-start text-white shadow-sm'
+							class="px-3 py-2.5 text-sm font-medium rounded-lg transition-all {images.settings.outputFormat === format.value
+								? 'bg-accent-start text-white shadow-md'
 								: 'text-surface-400 hover:text-surface-200 hover:bg-surface-700/50'}"
 							title={format.title}
 						>
@@ -309,7 +216,6 @@
 
 		<!-- Row 2: Advanced Options Toggle + Re-optimize -->
 		<div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-			<!-- Advanced Options Toggle - minimum 44px touch target -->
 			<button
 				onclick={toggleAdvanced}
 				class="flex items-center gap-2 min-h-[44px] py-2 text-xs font-medium text-surface-400 hover:text-surface-200 transition-colors"
@@ -322,12 +228,11 @@
 				<span class="uppercase tracking-wider">Advanced Options</span>
 				{#if !showAdvanced}
 					<span class="text-surface-500 hidden sm:inline">
-						({images.settings.stripMetadata ? 'Metadata stripped' : 'Metadata kept'}{isLossless && !isTargetSizeMode ? ', Lossless' : ''})
+						({images.settings.stripMetadata ? 'Metadata stripped' : 'Metadata kept'}{isLossless ? ', Lossless' : ''}{resizeEnabled ? ', Resize' : ''})
 					</span>
 				{/if}
 			</button>
 
-			<!-- Re-optimize Button -->
 			{#if hasCompletedImages}
 				<button
 					onclick={handleReoptimizeClick}
@@ -343,13 +248,13 @@
 		<!-- Advanced Options Section (Collapsible) -->
 		{#if showAdvanced}
 			<div 
-				class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-3 border-t border-surface-700/30"
+				class="flex flex-wrap items-center gap-3 pt-3 border-t border-surface-700/30"
 				transition:slide={{ duration: 200 }}
 			>
 				<!-- Strip Metadata Toggle -->
 				<button
 					onclick={handleMetadataToggle}
-					class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all {images.settings.stripMetadata ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 hover:bg-surface-700/30'}"
+					class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {images.settings.stripMetadata ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 bg-surface-800/30 hover:bg-surface-700/30'}"
 					title={images.settings.stripMetadata ? 'Location, camera info, timestamps will be removed' : 'Metadata will be preserved (may include location)'}
 				>
 					<Shield class="h-4 w-4" />
@@ -358,7 +263,7 @@
 						<span class="text-[10px] text-surface-500">Location, camera, timestamps</span>
 					</div>
 					<div
-						class="relative h-5 w-9 rounded-full transition-colors {images.settings.stripMetadata ? 'bg-accent-start' : 'bg-surface-600'}"
+						class="relative h-5 w-9 rounded-full transition-colors ml-2 {images.settings.stripMetadata ? 'bg-accent-start' : 'bg-surface-600'}"
 					>
 						<span
 							class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform {images.settings.stripMetadata ? 'translate-x-4' : 'translate-x-0'}"
@@ -366,33 +271,31 @@
 					</div>
 				</button>
 
-				<!-- Lossless Toggle (only in Quality mode) -->
-				{#if !isTargetSizeMode}
-					<button
-						onclick={handleLosslessToggle}
-						class="flex items-center gap-2 px-3 py-2 rounded-lg transition-all {isLossless ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 hover:bg-surface-700/30'}"
-						title={isLossless ? 'No quality loss, larger files' : 'Smaller files, slight quality reduction'}
+				<!-- Lossless Toggle -->
+				<button
+					onclick={handleLosslessToggle}
+					class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all {isLossless ? 'text-accent-start bg-accent-start/10' : 'text-surface-400 bg-surface-800/30 hover:bg-surface-700/30'}"
+					title={isLossless ? 'No quality loss, larger files' : 'Smaller files, slight quality reduction'}
+				>
+					<Sparkles class="h-4 w-4" />
+					<div class="flex flex-col items-start">
+						<span class="text-sm font-medium">Lossless</span>
+						<span class="text-[10px] text-surface-500">{isLossless ? 'Perfect quality' : 'Larger files'}</span>
+					</div>
+					<div
+						class="relative h-5 w-9 rounded-full transition-colors ml-2 {isLossless ? 'bg-accent-start' : 'bg-surface-600'}"
 					>
-						<Sparkles class="h-4 w-4" />
-						<div class="flex flex-col items-start">
-							<span class="text-sm font-medium">Lossless</span>
-							<span class="text-[10px] text-surface-500">{isLossless ? 'No quality loss' : 'Larger files'}</span>
-						</div>
-						<div
-							class="relative h-5 w-9 rounded-full transition-colors {isLossless ? 'bg-accent-start' : 'bg-surface-600'}"
-						>
-							<span
-								class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform {isLossless ? 'translate-x-4' : 'translate-x-0'}"
-							></span>
-						</div>
-					</button>
-				{/if}
+						<span
+							class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform {isLossless ? 'translate-x-4' : 'translate-x-0'}"
+						></span>
+					</div>
+				</button>
 
 				<!-- Resize Toggle + Controls -->
-				<div class="flex items-center gap-3 px-3 py-2 rounded-lg {resizeEnabled ? 'bg-accent-start/10' : 'bg-surface-800/30'}">
+				<div class="flex items-center gap-3 px-4 py-3 rounded-xl {resizeEnabled ? 'bg-accent-start/10' : 'bg-surface-800/30'}">
 					<button
 						onclick={handleResizeToggle}
-						class="flex items-center gap-2 transition-all {resizeEnabled ? 'text-accent-start' : 'text-surface-400 hover:text-surface-300'}"
+						class="flex items-center gap-3 transition-all {resizeEnabled ? 'text-accent-start' : 'text-surface-400 hover:text-surface-300'}"
 					>
 						<Maximize2 class="h-4 w-4" />
 						<div class="flex flex-col items-start">
@@ -400,7 +303,7 @@
 							<span class="text-[10px] text-surface-500">Scale images</span>
 						</div>
 						<div
-							class="relative h-5 w-9 rounded-full transition-colors {resizeEnabled ? 'bg-accent-start' : 'bg-surface-600'}"
+							class="relative h-5 w-9 rounded-full transition-colors ml-2 {resizeEnabled ? 'bg-accent-start' : 'bg-surface-600'}"
 						>
 							<span
 								class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform {resizeEnabled ? 'translate-x-4' : 'translate-x-0'}"
@@ -409,7 +312,7 @@
 					</button>
 					
 					{#if resizeEnabled}
-						<div class="flex items-center gap-3 ml-3 pl-3 border-l border-surface-600">
+						<div class="flex items-center gap-3 ml-2 pl-3 border-l border-surface-600">
 							<!-- Mode selector -->
 							<div class="flex gap-0.5 p-0.5 rounded-md bg-surface-700/50">
 								<button
@@ -466,7 +369,7 @@
 
 				<!-- Multi-scale Export (only shown for SVG → raster conversions) -->
 				{#if hasSvgToRaster}
-					<div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-800/30">
+					<div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-800/30">
 						<Layers class="h-4 w-4 text-surface-400" />
 						<div class="flex flex-col items-start">
 							<span class="text-sm font-medium text-surface-300">SVG Scale Export</span>
