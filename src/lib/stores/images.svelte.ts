@@ -31,7 +31,17 @@ export interface ImageItem {
 	webpAlternativeSize?: number;
 	// Multi-scale outputs (for SVG → raster conversions)
 	scaledOutputs?: ScaledOutput[];
+	// Target size mode: tracking info
+	targetSizeAttempt?: number; // Current binary search iteration
+	targetSizeMaxAttempts?: number; // Total iterations
+	achievedQuality?: number; // Final quality used
+	targetSizeWarning?: string; // Warning if target not achievable
+	// Resize info
+	resizedWidth?: number; // Output width after resize
+	resizedHeight?: number; // Output height after resize
 }
+
+export type ResizeMode = 'percentage' | 'dimensions' | 'fit';
 
 export interface CompressionSettings {
 	quality: number;
@@ -41,6 +51,16 @@ export interface CompressionSettings {
 	// Multi-scale export for SVG → raster (always includes 1x)
 	export2x: boolean;
 	export3x: boolean;
+	// Target file size mode
+	targetSizeMode: boolean;
+	targetSizeKB: number; // Target size in KB (e.g., 500)
+	// Resize settings
+	resizeEnabled: boolean;
+	resizeMode: ResizeMode;
+	resizePercentage: number; // 50 = 50%
+	resizeMaxWidth: number;
+	resizeMaxHeight: number;
+	maintainAspectRatio: boolean;
 }
 
 export interface BatchStats {
@@ -82,7 +102,16 @@ function getDefaultSettings(): CompressionSettings {
 		stripMetadata: true,
 		lossless: false,
 		export2x: false, // Multi-scale disabled by default
-		export3x: false
+		export3x: false,
+		targetSizeMode: false, // Quality mode by default
+		targetSizeKB: 500, // Default target: 500KB
+		// Resize defaults
+		resizeEnabled: false,
+		resizeMode: 'percentage',
+		resizePercentage: 50,
+		resizeMaxWidth: 1920,
+		resizeMaxHeight: 1080,
+		maintainAspectRatio: true
 	};
 }
 
@@ -254,6 +283,20 @@ function createImagesStore() {
 			items = [];
 			selectedIds = new Set();
 			batchStats = { startTime: null, endTime: null, totalImages: 0 };
+		},
+
+		// Clear all without revoking URLs (for undo support)
+		clearAllForUndo(): ImageItem[] {
+			const clearedItems = [...items];
+			items = [];
+			selectedIds = new Set();
+			batchStats = { startTime: null, endTime: null, totalImages: 0 };
+			return clearedItems;
+		},
+
+		// Restore items (for undo)
+		restoreItems(restoredItems: ImageItem[]) {
+			items = restoredItems;
 		},
 
 		updateSettings(newSettings: Partial<CompressionSettings>) {

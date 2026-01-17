@@ -25,6 +25,7 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
+			e.stopPropagation(); // Prevent global escape handler from firing
 			oncancel();
 		}
 		if (e.key === 'Enter') {
@@ -49,12 +50,14 @@
 </script>
 
 {#if open}
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center p-4"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="modal-title"
 		onkeydown={handleKeydown}
+		tabindex="0"
 		use:focusTrap
 	>
 		<!-- Backdrop -->

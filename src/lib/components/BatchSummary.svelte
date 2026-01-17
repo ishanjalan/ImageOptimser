@@ -44,7 +44,8 @@
 	async function handleDownloadAll() {
 		if (completedItems.length > 0) {
 			await downloadAllAsZip(completedItems);
-			toast.success(`Downloaded ${completedItems.length} images as ZIP`);
+			const savedFormatted = formatBytes(totalSaved);
+			toast.success(`Downloaded ${completedItems.length} ${completedItems.length === 1 ? 'image' : 'images'} as ZIP (${savedFormatted} saved!)`);
 		}
 	}
 </script>
@@ -63,7 +64,7 @@
 				</div>
 				<div>
 					<h3 class="font-semibold text-surface-100">Batch Complete!</h3>
-					<p class="text-sm text-surface-400">{completedItems.length} images optimized</p>
+					<p class="text-sm text-surface-400">{completedItems.length} {completedItems.length === 1 ? 'image' : 'images'} optimized</p>
 				</div>
 			</div>
 			<button

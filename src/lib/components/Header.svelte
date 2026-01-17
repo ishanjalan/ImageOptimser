@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { Github, Zap, Command, Keyboard, WifiOff, Download } from 'lucide-svelte';
+	import { Github, Zap, Command, Keyboard, WifiOff, Download, X, Sun, Moon } from 'lucide-svelte';
 	import { scale, fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { toast } from './Toast.svelte';
+
+	const FIRST_VISIT_KEY = 'squish-first-visit-shown';
+	const THEME_KEY = 'squish-theme';
+
+	type Theme = 'light' | 'dark' | 'system';
+	let currentTheme = $state<Theme>('system');
+	let isDarkMode = $state(true); // Actual computed state
 
 	function handleLogoClick() {
 		const hadImages = images.items.length > 0;
@@ -15,6 +22,7 @@
 	}
 
 	let showShortcuts = $state(false);
+	let showFirstRunHint = $state(false);
 	let isOffline = $state(false);
 	let showInstallPrompt = $state(false);
 	let deferredPrompt: any = null;
@@ -31,8 +39,16 @@
 
 	function handleClickOutside(e: MouseEvent) {
 		const target = e.target as HTMLElement;
-		if (!target.closest('[data-shortcuts-popover]')) {
+		if (!target.closest('[data-shortcuts-popover]') && !target.closest('[data-first-run-hint]')) {
 			showShortcuts = false;
+			showFirstRunHint = false;
+		}
+	}
+
+	function dismissFirstRunHint() {
+		showFirstRunHint = false;
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem(FIRST_VISIT_KEY, 'true');
 		}
 	}
 
@@ -64,9 +80,72 @@
 		showInstallPrompt = false;
 	}
 
+	function applyTheme(theme: Theme) {
+		const html = document.documentElement;
+		let dark: boolean;
+
+		if (theme === 'system') {
+			dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		} else {
+			dark = theme === 'dark';
+		}
+
+		isDarkMode = dark;
+		html.classList.toggle('dark', dark);
+		
+		// Update meta theme-color for mobile browsers
+		const metaTheme = document.querySelector('meta[name="theme-color"]');
+		if (metaTheme) {
+			metaTheme.setAttribute('content', dark ? '#09090b' : '#f4f4f5');
+		}
+	}
+
+	function toggleTheme() {
+		// Cycle: system -> light -> dark -> system
+		const next: Record<Theme, Theme> = {
+			'system': 'light',
+			'light': 'dark',
+			'dark': 'system'
+		};
+		currentTheme = next[currentTheme];
+		
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem(THEME_KEY, currentTheme);
+		}
+		
+		applyTheme(currentTheme);
+	}
+
 	onMount(() => {
 		// Set initial online status
 		updateOnlineStatus();
+
+		// Initialize theme
+		if (typeof localStorage !== 'undefined') {
+			const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
+			currentTheme = savedTheme || 'system';
+		}
+		applyTheme(currentTheme);
+
+		// Listen for system theme changes
+		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const handleSystemThemeChange = () => {
+			if (currentTheme === 'system') {
+				applyTheme('system');
+			}
+		};
+		mediaQuery.addEventListener('change', handleSystemThemeChange);
+
+		// Check if first visit
+		if (typeof localStorage !== 'undefined') {
+			const hasVisited = localStorage.getItem(FIRST_VISIT_KEY);
+			if (!hasVisited) {
+				// Show first-run hint after a brief delay
+				setTimeout(() => {
+					showFirstRunHint = true;
+				}, 1500);
+			}
+		}
 
 		// Listen for online/offline events
 		window.addEventListener('online', updateOnlineStatus);
@@ -79,6 +158,7 @@
 			window.removeEventListener('online', updateOnlineStatus);
 			window.removeEventListener('offline', updateOnlineStatus);
 			window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+			mediaQuery.removeEventListener('change', handleSystemThemeChange);
 		};
 	});
 </script>
@@ -129,17 +209,71 @@
 					</button>
 				{/if}
 
+				<!-- Theme toggle -->
+				<button
+					onclick={toggleTheme}
+					class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 transition-all hover:bg-surface-800 hover:text-surface-100"
+					aria-label="Toggle theme (current: {currentTheme})"
+					title="Theme: {currentTheme === 'system' ? 'System' : currentTheme === 'dark' ? 'Dark' : 'Light'}"
+				>
+					{#if currentTheme === 'system'}
+						<div class="relative">
+							<Sun class="h-3 w-3 absolute -top-0.5 -left-0.5 opacity-60" />
+							<Moon class="h-3 w-3 absolute -bottom-0.5 -right-0.5 opacity-60" />
+						</div>
+					{:else if isDarkMode}
+						<Moon class="h-5 w-5" />
+					{:else}
+						<Sun class="h-5 w-5" />
+					{/if}
+				</button>
+
 				<!-- Keyboard shortcuts -->
 				<div class="relative" data-shortcuts-popover>
 					<button
-						onclick={(e) => { e.stopPropagation(); showShortcuts = !showShortcuts; }}
-						class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 transition-all hover:bg-surface-800 hover:text-surface-100"
+						onclick={(e) => { e.stopPropagation(); showShortcuts = !showShortcuts; showFirstRunHint = false; }}
+						class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 transition-all hover:bg-surface-800 hover:text-surface-100 {showFirstRunHint ? 'ring-2 ring-accent-start ring-offset-2 ring-offset-surface-900' : ''}"
 						aria-label="Keyboard shortcuts"
 						aria-expanded={showShortcuts}
 						aria-haspopup="true"
 					>
 						<Keyboard class="h-5 w-5" />
 					</button>
+
+					<!-- First-run hint -->
+					{#if showFirstRunHint && !showShortcuts}
+						<div
+							class="absolute right-0 top-full mt-2 w-72 rounded-xl bg-gradient-to-br from-accent-start to-accent-end p-4 shadow-xl"
+							transition:scale={{ duration: 200, start: 0.95 }}
+							data-first-run-hint
+						>
+							<button
+								onclick={dismissFirstRunHint}
+								class="absolute top-2 right-2 p-1 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+								aria-label="Dismiss"
+							>
+								<X class="h-4 w-4" />
+							</button>
+							<div class="flex items-start gap-3">
+								<div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-white/20">
+									<Command class="h-4 w-4 text-white" />
+								</div>
+								<div>
+									<h3 class="text-sm font-semibold text-white">Pro tip: Keyboard shortcuts!</h3>
+									<p class="mt-1 text-xs text-white/80">
+										Paste images with <kbd class="rounded bg-white/20 px-1.5 py-0.5 font-mono">{modKey}+V</kbd>, 
+										download all with <kbd class="rounded bg-white/20 px-1.5 py-0.5 font-mono">{modKey}+Shift+D</kbd>
+									</p>
+									<button
+										onclick={dismissFirstRunHint}
+										class="mt-2 text-xs font-medium text-white underline underline-offset-2 hover:no-underline"
+									>
+										Got it!
+									</button>
+								</div>
+							</div>
+						</div>
+					{/if}
 
 					{#if showShortcuts}
 						<div

@@ -47,7 +47,14 @@ async function downloadMultiScaleAsZip(item: ImageItem) {
 	downloadBlob(content, `${baseName}-scales.zip`);
 }
 
-export async function downloadAllAsZip(items: ImageItem[]) {
+export interface ZipProgressCallback {
+	(progress: number): void;
+}
+
+export async function downloadAllAsZip(
+	items: ImageItem[],
+	onProgress?: ZipProgressCallback
+): Promise<void> {
 	const zip = new JSZip();
 
 	// Track filenames to avoid duplicates
@@ -85,7 +92,12 @@ export async function downloadAllAsZip(items: ImageItem[]) {
 		}
 	}
 
-	const content = await zip.generateAsync({ type: 'blob' });
+	const content = await zip.generateAsync(
+		{ type: 'blob' },
+		onProgress ? (metadata) => {
+			onProgress(metadata.percent);
+		} : undefined
+	);
 	downloadBlob(content, `optimized-images-${Date.now()}.zip`);
 }
 
@@ -166,6 +178,7 @@ export async function downloadAllSmart(
 		forceZip?: boolean;
 		forceFSAPI?: boolean;
 		onMethodChosen?: (method: 'zip' | 'fsapi') => void;
+		onProgress?: ZipProgressCallback;
 	}
 ): Promise<void> {
 	const validItems = items.filter(i => i.compressedBlob);
@@ -175,7 +188,7 @@ export async function downloadAllSmart(
 	// If forcing a specific method
 	if (options?.forceZip) {
 		options.onMethodChosen?.('zip');
-		return downloadAllAsZip(validItems);
+		return downloadAllAsZip(validItems, options.onProgress);
 	}
 
 	if (options?.forceFSAPI && isFileSystemAccessSupported()) {
@@ -192,7 +205,7 @@ export async function downloadAllSmart(
 	}
 
 	options?.onMethodChosen?.('zip');
-	return downloadAllAsZip(validItems);
+	return downloadAllAsZip(validItems, options?.onProgress);
 }
 
 // Get download info for UI display

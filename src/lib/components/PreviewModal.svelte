@@ -64,6 +64,7 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
+			e.stopPropagation(); // Prevent global escape handler from firing
 			onclose();
 		}
 		if (e.key === '+' || e.key === '=') {
@@ -161,6 +162,7 @@
 	</div>
 
 	<!-- Image container -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		bind:this={containerRef}
 		class="flex-1 overflow-hidden {zoom > 1 ? 'cursor-grab' : 'cursor-zoom-in'} {isDragging ? 'cursor-grabbing' : ''}"

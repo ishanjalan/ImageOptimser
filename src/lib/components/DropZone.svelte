@@ -206,20 +206,20 @@
 	/>
 
 	{#if hasImages}
-		<!-- Compact dropzone when images exist -->
+		<!-- Compact dropzone when images exist - minimum 44px touch target -->
 		<div
-			class="group flex items-center justify-center gap-4 rounded-2xl border-2 border-dashed py-4 sm:py-5 px-6 transition-all duration-300 cursor-pointer {isDragging
+			class="group flex items-center justify-center gap-4 rounded-2xl border-2 border-dashed min-h-[56px] py-5 sm:py-6 px-6 transition-all duration-300 cursor-pointer {isDragging
 				? 'border-accent-start bg-accent-start/5'
 				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700'}"
 		>
-			<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-100 dark:bg-surface-800 transition-colors group-hover:bg-accent-start/10">
+			<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-100 dark:bg-surface-800 transition-colors group-hover:bg-accent-start/10">
 				{#if isDragging}
-					<FileImage class="h-5 w-5 text-accent-start animate-pulse" />
+					<FileImage class="h-6 w-6 text-accent-start animate-pulse" />
 				{:else}
-					<Upload class="h-5 w-5 text-surface-400 group-hover:text-accent-start" />
+					<Upload class="h-6 w-6 text-surface-400 group-hover:text-accent-start" />
 				{/if}
 			</div>
-			<p class="text-base text-surface-500">
+			<p class="text-lg text-surface-500">
 				{#if isDragging}
 					<span class="font-medium text-accent-start">Release to add more</span>
 				{:else}
@@ -286,6 +286,7 @@
 
 	<!-- URL Input section -->
 	{#if !hasImages}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="mt-4 flex justify-center" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
 			{#if showUrlInput}
 				<div class="flex items-center gap-2 w-full max-w-md" transition:fade={{ duration: 150 }}>

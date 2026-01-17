@@ -1,4 +1,4 @@
-import { images, type OutputFormat, type ImageItem, type ScaledOutput } from '$lib/stores/images.svelte';
+import { images, type OutputFormat, type ImageItem, type ScaledOutput, type ResizeMode } from '$lib/stores/images.svelte';
 import { optimize } from 'svgo';
 import { processImage as processImageInWorker, initPool } from './worker-pool';
 import heic2any from 'heic2any';
@@ -7,10 +7,41 @@ import heic2any from 'heic2any';
 let isProcessing = false;
 const queue: string[] = [];
 
+// Abort controller for cancelling processing
+let abortController: AbortController | null = null;
+
+export function cancelProcessing(): void {
+	if (abortController) {
+		abortController.abort();
+		abortController = null;
+	}
+	
+	// Clear the queue
+	queue.length = 0;
+	
+	// Reset all processing items to pending
+	images.items
+		.filter(i => i.status === 'processing')
+		.forEach(i => images.updateItem(i.id, { 
+			status: 'pending', 
+			progress: 0,
+			targetSizeAttempt: undefined,
+			targetSizeMaxAttempts: undefined
+		}));
+	
+	isProcessing = false;
+}
+
+export function isCurrentlyProcessing(): boolean {
+	return isProcessing;
+}
+
 export async function processImages(ids: string[]) {
 	// Start batch timing if this is a new batch
 	if (!isProcessing && ids.length > 0) {
 		images.startBatch(ids.length);
+		// Create new abort controller for this batch
+		abortController = new AbortController();
 	} else if (isProcessing) {
 		// Adding to existing batch - update total count
 		const currentTotal = images.batchStats.totalImages;
@@ -88,8 +119,203 @@ async function convertHeicToPng(file: File): Promise<{ blob: Blob; width: number
 	return { blob: pngBlob, ...dimensions };
 }
 
+// Calculate resized dimensions based on settings
+function calculateResizedDimensions(
+	originalWidth: number,
+	originalHeight: number,
+	mode: ResizeMode,
+	percentage: number,
+	maxWidth: number,
+	maxHeight: number
+): { width: number; height: number } {
+	if (mode === 'percentage') {
+		const scale = percentage / 100;
+		return {
+			width: Math.round(originalWidth * scale),
+			height: Math.round(originalHeight * scale)
+		};
+	} else {
+		// 'fit' or 'dimensions' mode - fit within max bounds maintaining aspect ratio
+		const aspectRatio = originalWidth / originalHeight;
+		
+		let newWidth = originalWidth;
+		let newHeight = originalHeight;
+		
+		// Only downscale, never upscale
+		if (originalWidth > maxWidth || originalHeight > maxHeight) {
+			if (originalWidth / maxWidth > originalHeight / maxHeight) {
+				// Width is the limiting factor
+				newWidth = maxWidth;
+				newHeight = Math.round(maxWidth / aspectRatio);
+			} else {
+				// Height is the limiting factor
+				newHeight = maxHeight;
+				newWidth = Math.round(maxHeight * aspectRatio);
+			}
+		}
+		
+		return { width: newWidth, height: newHeight };
+	}
+}
+
+// Resize an image blob using OffscreenCanvas (or regular Canvas as fallback)
+async function resizeImageBlob(
+	blob: Blob,
+	targetWidth: number,
+	targetHeight: number
+): Promise<{ blob: Blob; width: number; height: number }> {
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		const url = URL.createObjectURL(blob);
+		
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			
+			try {
+				const canvas = document.createElement('canvas');
+				canvas.width = targetWidth;
+				canvas.height = targetHeight;
+				
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					reject(new Error('Failed to get canvas context'));
+					return;
+				}
+				
+				// Use high-quality image interpolation
+				ctx.imageSmoothingEnabled = true;
+				ctx.imageSmoothingQuality = 'high';
+				
+				ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+				
+				canvas.toBlob((resizedBlob) => {
+					if (resizedBlob) {
+						resolve({ blob: resizedBlob, width: targetWidth, height: targetHeight });
+					} else {
+						reject(new Error('Failed to create resized blob'));
+					}
+				}, 'image/png'); // Use PNG as intermediate format for quality
+			} catch (err) {
+				reject(err);
+			}
+		};
+		
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error('Failed to load image for resize'));
+		};
+		
+		img.src = url;
+	});
+}
+
+// Compress a single image at a specific quality level (used for binary search)
+async function compressAtQuality(
+	item: ImageItem,
+	quality: number,
+	lossless: boolean,
+	onProgress?: (progress: number) => void
+): Promise<{ blob: Blob; width: number; height: number }> {
+	const outputFormat = item.outputFormat;
+	
+	if (item.format === 'heic') {
+		// HEIC: Convert to PNG first, then process
+		const { blob: pngBlob, width, height } = await convertHeicToPng(item.file);
+		const imageBuffer = await pngBlob.arrayBuffer();
+
+		const { result, mimeType, width: outWidth, height: outHeight } = await processImageInWorker(
+			`${item.id}-q${quality}`,
+			imageBuffer,
+			'png',
+			outputFormat,
+			quality,
+			lossless,
+			onProgress
+		);
+
+		return { blob: new Blob([result], { type: mimeType }), width: outWidth, height: outHeight };
+	} else {
+		// Standard raster image processing
+		const imageBuffer = await item.file.arrayBuffer();
+
+		const { result, mimeType, width: outWidth, height: outHeight } = await processImageInWorker(
+			`${item.id}-q${quality}`,
+			imageBuffer,
+			item.format,
+			outputFormat,
+			quality,
+			lossless,
+			onProgress
+		);
+
+		return { blob: new Blob([result], { type: mimeType }), width: outWidth, height: outHeight };
+	}
+}
+
+// Binary search to find optimal quality for target file size
+async function compressToTargetSize(
+	item: ImageItem,
+	targetSizeBytes: number,
+	maxIterations: number = 6
+): Promise<{ blob: Blob; width: number; height: number; achievedQuality: number; warning?: string }> {
+	let minQuality = 10;
+	let maxQuality = 98;
+	let bestBlob: Blob | null = null;
+	let bestWidth = 0;
+	let bestHeight = 0;
+	let bestQuality = minQuality;
+
+	images.updateItem(item.id, { 
+		targetSizeAttempt: 0, 
+		targetSizeMaxAttempts: maxIterations 
+	});
+
+	for (let i = 0; i < maxIterations; i++) {
+		const quality = Math.round((minQuality + maxQuality) / 2);
+		
+		images.updateItem(item.id, { 
+			targetSizeAttempt: i + 1,
+			progress: ((i + 1) / maxIterations) * 80 // Leave room for final compression
+		});
+
+		const { blob, width, height } = await compressAtQuality(item, quality, false);
+
+		if (blob.size <= targetSizeBytes) {
+			bestBlob = blob;
+			bestWidth = width;
+			bestHeight = height;
+			bestQuality = quality;
+			minQuality = quality + 1; // Try higher quality
+		} else {
+			maxQuality = quality - 1; // Need lower quality
+		}
+
+		// Early exit if we've found a good match
+		if (maxQuality < minQuality) break;
+	}
+
+	// If we found no blob under target, use the lowest quality result
+	if (!bestBlob) {
+		images.updateItem(item.id, { progress: 90 });
+		const { blob, width, height } = await compressAtQuality(item, 10, false);
+		
+		const warning = blob.size > targetSizeBytes 
+			? `Target ${Math.round(targetSizeBytes / 1024)}KB not achievable. Best: ${Math.round(blob.size / 1024)}KB at quality 10`
+			: undefined;
+		
+		return { blob, width, height, achievedQuality: 10, warning };
+	}
+
+	return { blob: bestBlob, width: bestWidth, height: bestHeight, achievedQuality: bestQuality };
+}
+
 async function compressImage(item: ImageItem) {
 	try {
+		// Check if aborted before starting
+		if (abortController?.signal.aborted) {
+			return;
+		}
+		
 		images.updateItem(item.id, { status: 'processing', progress: 5 });
 
 		const quality = images.settings.quality;
@@ -97,13 +323,38 @@ async function compressImage(item: ImageItem) {
 		const export2x = images.settings.export2x;
 		const export3x = images.settings.export3x;
 		const outputFormat = item.outputFormat;
+		const targetSizeMode = images.settings.targetSizeMode;
+		const targetSizeKB = images.settings.targetSizeKB;
+		
+		// Resize settings
+		const resizeEnabled = images.settings.resizeEnabled;
+		const resizeMode = images.settings.resizeMode;
+		const resizePercentage = images.settings.resizePercentage;
+		const resizeMaxWidth = images.settings.resizeMaxWidth;
+		const resizeMaxHeight = images.settings.resizeMaxHeight;
 
 		let compressedBlob: Blob;
 		let finalWidth: number | undefined;
 		let finalHeight: number | undefined;
 		let scaledOutputs: ScaledOutput[] | undefined;
+		let resizedWidth: number | undefined;
+		let resizedHeight: number | undefined;
 
-		if (item.format === 'svg' && outputFormat === 'svg') {
+		// Target size mode for raster images (not SVG)
+		if (targetSizeMode && item.format !== 'svg' && !lossless) {
+			const targetBytes = targetSizeKB * 1024;
+			const { blob, width, height, achievedQuality, warning } = await compressToTargetSize(item, targetBytes);
+			
+			compressedBlob = blob;
+			finalWidth = width;
+			finalHeight = height;
+			
+			images.updateItem(item.id, { 
+				achievedQuality,
+				targetSizeWarning: warning,
+				progress: 95
+			});
+		} else if (item.format === 'svg' && outputFormat === 'svg') {
 			// SVG → SVG: Optimize with SVGO
 			compressedBlob = await optimizeSvg(item.file);
 			images.updateItem(item.id, { progress: 70 });
@@ -214,17 +465,51 @@ async function compressImage(item: ImageItem) {
 			finalHeight = outHeight;
 		} else {
 			// Standard raster image processing via worker
-			const imageBuffer = await item.file.arrayBuffer();
+			let sourceBlob: Blob = item.file;
+			let sourceFormat = item.format;
+			
+			// Apply resize if enabled and we have dimensions
+			if (resizeEnabled && item.width && item.height) {
+				images.updateItem(item.id, { progress: 10 });
+				
+				const { width: targetWidth, height: targetHeight } = calculateResizedDimensions(
+					item.width,
+					item.height,
+					resizeMode,
+					resizePercentage,
+					resizeMaxWidth,
+					resizeMaxHeight
+				);
+				
+				// Only resize if dimensions actually changed
+				if (targetWidth !== item.width || targetHeight !== item.height) {
+					const { blob: resizedBlobResult, width: rw, height: rh } = await resizeImageBlob(
+						item.file,
+						targetWidth,
+						targetHeight
+					);
+					sourceBlob = resizedBlobResult;
+					sourceFormat = 'png'; // Resize produces PNG
+					resizedWidth = rw;
+					resizedHeight = rh;
+					
+					images.updateItem(item.id, { progress: 30 });
+				}
+			}
+			
+			const imageBuffer = await sourceBlob.arrayBuffer();
+			const startProgress = resizeEnabled ? 30 : 0;
 
 			const { result, mimeType, width: outWidth, height: outHeight } = await processImageInWorker(
 				item.id,
 				imageBuffer,
-				item.format,
+				sourceFormat,
 				outputFormat,
 				quality,
 				lossless,
 				(progress) => {
-					images.updateItem(item.id, { progress });
+					const scaledProgress = startProgress + (progress * (100 - startProgress) / 100);
+					images.updateItem(item.id, { progress: scaledProgress });
 				}
 			);
 
@@ -256,13 +541,48 @@ async function compressImage(item: ImageItem) {
 			updates.width = finalWidth;
 			updates.height = finalHeight;
 		}
+		
+		// Add resize info if resized
+		if (resizedWidth && resizedHeight) {
+			updates.resizedWidth = resizedWidth;
+			updates.resizedHeight = resizedHeight;
+		}
 
 		images.updateItem(item.id, updates);
 	} catch (error) {
 		console.error('Compression error:', error);
+		
+		// Generate specific, actionable error messages
+		let message = 'Compression failed';
+		
+		if (error instanceof Error) {
+			const errorMsg = error.message.toLowerCase();
+			
+			if (errorMsg.includes('decode') || errorMsg.includes('invalid') || errorMsg.includes('corrupt')) {
+				message = 'Image appears corrupted. Try re-saving the original file.';
+			} else if (errorMsg.includes('memory') || errorMsg.includes('oom') || errorMsg.includes('allocation')) {
+				message = 'Image too large for browser memory. Try a smaller image.';
+			} else if (errorMsg.includes('format') || errorMsg.includes('unsupported')) {
+				message = 'Unsupported image format or encoding.';
+			} else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+				message = 'Network error loading image. Check your connection.';
+			} else if (errorMsg.includes('abort')) {
+				message = 'Processing was cancelled.';
+			} else if (errorMsg.includes('worker')) {
+				message = 'Worker error. Try refreshing the page.';
+			} else if (errorMsg.includes('heic') || errorMsg.includes('heif')) {
+				message = 'HEIC conversion failed. The file may be incompatible.';
+			} else {
+				// Use original message but make it more user-friendly
+				message = error.message.length > 100 
+					? error.message.substring(0, 100) + '...'
+					: error.message;
+			}
+		}
+		
 		images.updateItem(item.id, {
 			status: 'error',
-			error: error instanceof Error ? error.message : 'Compression failed'
+			error: message
 		});
 	}
 }

@@ -8,15 +8,24 @@
 	import BatchSummary from '$lib/components/BatchSummary.svelte';
 	import AnimatedNumber from '$lib/components/AnimatedNumber.svelte';
 	import { images, formatBytes } from '$lib';
-	import { processImages } from '$lib/utils/compress';
-	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown } from 'lucide-svelte';
+	import { processImages, cancelProcessing } from '$lib/utils/compress';
+	import { Download, Trash2, Sparkles, Zap, Shield, Gauge, ArrowDown, XCircle } from 'lucide-svelte';
 	import { downloadAllAsZip } from '$lib/utils/download';
 	import { fade, fly } from 'svelte/transition';
 	import { toast } from '$lib/components/Toast.svelte';
+	import type { ImageItem } from '$lib/stores/images.svelte';
 
 	let showClearConfirm = $state(false);
 	let showBatchSummary = $state(false);
 	let previousCompletedCount = $state(0);
+	
+	// ZIP download progress
+	let zipProgress = $state<number | null>(null);
+	let isZipping = $state(false);
+	
+	// Undo support for clear all
+	let deletedItems: ImageItem[] = [];
+	let undoTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	const hasImages = $derived(images.items.length > 0);
 	const completedCount = $derived(images.items.filter((i) => i.status === 'completed').length);
@@ -63,9 +72,84 @@
 	async function handleDownloadAll() {
 		const completedImages = images.items.filter((i) => i.status === 'completed' && i.compressedBlob);
 		if (completedImages.length > 0) {
-			await downloadAllAsZip(completedImages);
-			toast.success(`Downloaded ${completedImages.length} images as ZIP`);
+			isZipping = true;
+			zipProgress = 0;
+			
+			await downloadAllAsZip(completedImages, (progress) => {
+				zipProgress = progress;
+			});
+			
+			isZipping = false;
+			zipProgress = null;
+			
+			const savedBytes = completedImages.reduce((acc, i) => acc + (i.originalSize - (i.compressedSize || 0)), 0);
+			const savedFormatted = formatBytes(savedBytes);
+			toast.success(`Downloaded ${completedImages.length} images as ZIP (${savedFormatted} saved!)`);
 		}
+	}
+
+	// Clear all with undo support
+	function handleClearAllConfirm() {
+		const count = images.items.length;
+		
+		// Clear existing undo timer if any
+		if (undoTimeout) {
+			clearTimeout(undoTimeout);
+			// Permanently delete previous items
+			deletedItems.forEach(item => {
+				URL.revokeObjectURL(item.originalUrl);
+				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
+				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
+			});
+		}
+		
+		// Store items for undo (without revoking URLs)
+		deletedItems = images.clearAllForUndo();
+		showClearConfirm = false;
+		showBatchSummary = false;
+		
+		// Show toast with undo action
+		toast.info(`Cleared ${count} image${count !== 1 ? 's' : ''}`, {
+			duration: 5000,
+			action: {
+				label: 'Undo',
+				onClick: handleUndoClear
+			}
+		});
+		
+		// Schedule permanent deletion
+		undoTimeout = setTimeout(() => {
+			deletedItems.forEach(item => {
+				URL.revokeObjectURL(item.originalUrl);
+				if (item.compressedUrl) URL.revokeObjectURL(item.compressedUrl);
+				item.scaledOutputs?.forEach(o => URL.revokeObjectURL(o.url));
+			});
+			deletedItems = [];
+			undoTimeout = null;
+		}, 5000);
+	}
+	
+	function handleUndoClear() {
+		if (deletedItems.length === 0) return;
+		
+		// Cancel permanent deletion
+		if (undoTimeout) {
+			clearTimeout(undoTimeout);
+			undoTimeout = null;
+		}
+		
+		// Restore items
+		images.restoreItems(deletedItems);
+		const count = deletedItems.length;
+		deletedItems = [];
+		
+		toast.success(`Restored ${count} image${count !== 1 ? 's' : ''}`);
+	}
+	
+	function handleCancelProcessing() {
+		const count = processingCount;
+		cancelProcessing();
+		toast.info(`Cancelled processing of ${count} image${count !== 1 ? 's' : ''}`);
 	}
 
 	// Keyboard shortcuts
@@ -74,7 +158,10 @@
 			e.preventDefault();
 			handleDownloadAll();
 		}
-		if (e.key === 'Escape' && hasImages) {
+		// Only trigger clear confirm if no modals/dialogs are currently open
+		// Check for any open dialogs in the DOM (CompareSlider, PreviewModal, etc.)
+		const hasOpenDialog = document.querySelector('[role="dialog"]') !== null;
+		if (e.key === 'Escape' && hasImages && !showClearConfirm && !showBatchSummary && !hasOpenDialog) {
 			showClearConfirm = true;
 		}
 	}
@@ -294,14 +381,39 @@
 						{/if}
 					</div>
 					<div class="flex items-center gap-3">
+						{#if processingCount > 0}
+							<button
+								onclick={handleCancelProcessing}
+								class="flex items-center gap-2 rounded-xl bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-600 transition-all hover:bg-amber-500/20 dark:text-amber-400"
+							>
+								<XCircle class="h-5 w-5" aria-hidden="true" />
+								<span class="hidden sm:inline">Cancel</span>
+							</button>
+						{/if}
 						{#if completedCount > 0}
 							<button
 								onclick={handleDownloadAll}
-								class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40 hover:scale-105"
+								disabled={isZipping}
+								class="relative flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent-start to-accent-end px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-accent-start/30 transition-all hover:shadow-xl hover:shadow-accent-start/40 hover:scale-105 disabled:opacity-80 disabled:cursor-wait overflow-hidden"
 							>
-								<Download class="h-5 w-5" aria-hidden="true" />
-								<span class="hidden sm:inline">Download All</span>
-								<span class="sm:hidden">ZIP</span>
+								<!-- Progress bar overlay -->
+								{#if isZipping && zipProgress !== null}
+									<div 
+										class="absolute inset-0 bg-white/20 transition-all duration-150"
+										style="width: {zipProgress}%"
+									></div>
+								{/if}
+								<span class="relative flex items-center gap-2">
+									{#if isZipping}
+										<div class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></div>
+										<span class="hidden sm:inline">Zipping... {zipProgress !== null ? Math.round(zipProgress) : 0}%</span>
+										<span class="sm:hidden">{zipProgress !== null ? Math.round(zipProgress) : 0}%</span>
+									{:else}
+										<Download class="h-5 w-5" aria-hidden="true" />
+										<span class="hidden sm:inline">Download All</span>
+										<span class="sm:hidden">ZIP</span>
+									{/if}
+								</span>
 							</button>
 						{/if}
 						<button
@@ -316,13 +428,20 @@
 				</div>
 			{/if}
 
-			<!-- Settings Panel -->
+			<!-- Settings Panel (shown before drop zone when images exist) -->
 			{#if hasImages}
 				<Settings />
 			{/if}
 
 			<!-- Drop Zone -->
 			<DropZone />
+
+			<!-- Settings Panel (shown after drop zone when no images - allows pre-configuration) -->
+			{#if !hasImages}
+				<div class="mt-6" in:fade={{ duration: 200, delay: 300 }}>
+					<Settings />
+				</div>
+			{/if}
 
 			<!-- Image List -->
 			{#if hasImages}
@@ -338,14 +457,8 @@
 <ConfirmModal
 	open={showClearConfirm}
 	title="Clear all images?"
-	message="This will remove all {images.items.length} images from the list. This action cannot be undone."
+	message="This will remove all {images.items.length} images from the list. You can undo this action for 5 seconds."
 	confirmText="Clear All"
-	onconfirm={() => {
-		const count = images.items.length;
-		images.clearAll();
-		showClearConfirm = false;
-		showBatchSummary = false;
-		toast.info(`Cleared ${count} image${count !== 1 ? 's' : ''}`);
-	}}
+	onconfirm={handleClearAllConfirm}
 	oncancel={() => showClearConfirm = false}
 />

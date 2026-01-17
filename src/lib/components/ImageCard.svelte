@@ -241,7 +241,14 @@
 						{Math.round(item.progress)}%
 					</span>
 				</div>
-				<span class="text-xs font-medium text-white/80">Optimizing...</span>
+				<!-- Target size mode: show attempt info -->
+				{#if item.targetSizeAttempt && item.targetSizeMaxAttempts}
+					<span class="text-xs font-medium text-white/80">
+						Finding best quality ({item.targetSizeAttempt}/{item.targetSizeMaxAttempts})
+					</span>
+				{:else}
+					<span class="text-xs font-medium text-white/80">Optimizing...</span>
+				{/if}
 			</div>
 		{/if}
 		
@@ -348,18 +355,25 @@
 				</span>
 			</div>
 		{:else if item.status === 'error'}
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2 text-sm text-red-500">
-					<AlertCircle class="h-4 w-4" />
-					<span>Failed</span>
+			<div class="space-y-2">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2 text-sm text-red-500">
+						<AlertCircle class="h-4 w-4 flex-shrink-0" />
+						<span>Failed</span>
+					</div>
+					<button
+						onclick={handleRetry}
+						class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+					>
+						<RotateCcw class="h-4 w-4" />
+						Retry
+					</button>
 				</div>
-				<button
-					onclick={handleRetry}
-					class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
-				>
-					<RotateCcw class="h-4 w-4" />
-					Retry
-				</button>
+				{#if item.error}
+					<p class="text-xs text-red-400 dark:text-red-500 leading-relaxed">
+						{item.error}
+					</p>
+				{/if}
 			</div>
 		{:else if item.status === 'completed'}
 			<!-- Format + Actions row -->
@@ -447,6 +461,25 @@
 						Complex SVG — even a 3× retina WebP is smaller (<strong>{formatBytes(item.webpAlternativeSize!)}</strong>). Click to convert.
 					</span>
 				</button>
+			{/if}
+			
+			<!-- Resize info -->
+			{#if item.resizedWidth && item.resizedHeight && item.width && item.height}
+				<div class="mt-2 text-xs text-surface-500">
+					Resized: {item.width} × {item.height} → {item.resizedWidth} × {item.resizedHeight}
+				</div>
+			{/if}
+			
+			<!-- Target size warning -->
+			{#if item.targetSizeWarning}
+				<div class="mt-3 flex w-full items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-600 dark:text-amber-400">
+					<AlertCircle class="h-4 w-4 flex-shrink-0" />
+					<span>{item.targetSizeWarning}</span>
+				</div>
+			{:else if item.achievedQuality}
+				<div class="mt-2 text-xs text-surface-500">
+					Achieved at quality {item.achievedQuality}%
+				</div>
 			{/if}
 		{/if}
 	</div>

@@ -3,20 +3,32 @@
 
 	export type ToastType = 'success' | 'error' | 'info';
 
+	export interface ToastAction {
+		label: string;
+		onClick: () => void;
+	}
+
+	export interface ToastOptions {
+		duration?: number;
+		action?: ToastAction;
+	}
+
 	export interface Toast {
 		id: string;
 		message: string;
 		type: ToastType;
 		duration?: number;
+		action?: ToastAction;
 	}
 
 	// Global toast state
 	let toasts = $state<Toast[]>([]);
 
-	export function addToast(message: string, type: ToastType = 'info', duration = 3000): string {
+	export function addToast(message: string, type: ToastType = 'info', options: ToastOptions = {}): string {
 		const id = `toast_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+		const duration = options.duration ?? 3000;
 		
-		toasts = [...toasts, { id, message, type, duration }];
+		toasts = [...toasts, { id, message, type, duration, action: options.action }];
 
 		// Auto-dismiss
 		if (duration > 0) {
@@ -34,9 +46,18 @@
 
 	// Convenience methods
 	export const toast = {
-		success: (message: string, duration?: number) => addToast(message, 'success', duration),
-		error: (message: string, duration?: number) => addToast(message, 'error', duration ?? 5000),
-		info: (message: string, duration?: number) => addToast(message, 'info', duration)
+		success: (message: string, options?: ToastOptions | number) => {
+			const opts = typeof options === 'number' ? { duration: options } : options;
+			return addToast(message, 'success', opts);
+		},
+		error: (message: string, options?: ToastOptions | number) => {
+			const opts = typeof options === 'number' ? { duration: options } : options;
+			return addToast(message, 'error', { duration: 5000, ...opts });
+		},
+		info: (message: string, options?: ToastOptions | number) => {
+			const opts = typeof options === 'number' ? { duration: options } : options;
+			return addToast(message, 'info', opts);
+		}
 	};
 </script>
 
@@ -63,19 +84,27 @@
 		aria-label="Notifications"
 		aria-live="polite"
 	>
-		{#each toasts as toast (toast.id)}
+		{#each toasts as t (t.id)}
 			<div
-				class="glass flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg {styles[toast.type]}"
+				class="glass flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg {styles[t.type]}"
 				in:fly={{ x: 100, duration: 200 }}
 				out:fade={{ duration: 150 }}
 				role="alert"
 			>
-				<svelte:component this={icons[toast.type]} class="h-5 w-5 flex-shrink-0" />
+				<svelte:component this={icons[t.type]} class="h-5 w-5 flex-shrink-0" />
 				<p class="flex-1 text-sm font-medium text-surface-900 dark:text-surface-100">
-					{toast.message}
+					{t.message}
 				</p>
+				{#if t.action}
+					<button
+						onclick={() => { t.action?.onClick(); removeToast(t.id); }}
+						class="flex-shrink-0 rounded-lg px-3 py-1 text-sm font-semibold text-accent-start bg-accent-start/20 transition-colors hover:bg-accent-start/30"
+					>
+						{t.action.label}
+					</button>
+				{/if}
 				<button
-					onclick={() => removeToast(toast.id)}
+					onclick={() => removeToast(t.id)}
 					class="flex-shrink-0 rounded-lg p-1 text-surface-400 transition-colors hover:bg-surface-200 hover:text-surface-600 dark:hover:bg-surface-700 dark:hover:text-surface-300"
 					aria-label="Dismiss notification"
 				>

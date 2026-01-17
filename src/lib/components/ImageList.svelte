@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { images } from '$lib/stores/images.svelte';
+	import { images, formatBytes } from '$lib';
 	import ImageCard from './ImageCard.svelte';
 	import { flip } from 'svelte/animate';
 	import { GripVertical, CheckSquare, Square, Download, Trash2 } from 'lucide-svelte';
@@ -112,7 +112,9 @@
 		const selected = images.getSelectedItems().filter(i => i.status === 'completed' && i.compressedBlob);
 		if (selected.length > 0) {
 			await downloadAllAsZip(selected);
-			toast.success(`Downloaded ${selected.length} image${selected.length !== 1 ? 's' : ''} as ZIP`);
+			const savedBytes = selected.reduce((acc, i) => acc + (i.originalSize - (i.compressedSize || 0)), 0);
+			const savedFormatted = formatBytes(savedBytes);
+			toast.success(`Downloaded ${selected.length} image${selected.length !== 1 ? 's' : ''} as ZIP (${savedFormatted} saved!)`);
 		}
 	}
 	

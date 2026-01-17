@@ -45,6 +45,7 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
+			e.stopPropagation(); // Prevent global escape handler from firing
 			onclose();
 		}
 		if (e.key === 'ArrowLeft') {
@@ -67,6 +68,8 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Backdrop -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
 	bind:this={dialogRef}
 	use:focusTrap
@@ -76,6 +79,7 @@
 	role="dialog"
 	aria-modal="true"
 	aria-label="Image comparison"
+	tabindex="0"
 >
 	<!-- Close button -->
 	<button
