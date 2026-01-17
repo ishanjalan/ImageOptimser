@@ -1,6 +1,6 @@
 # Squish
 
-A blazing-fast, privacy-first image optimizer that runs entirely in your browser. Compress and convert images with professional-grade codecs — no uploads, no servers, no compromises.
+A blazing-fast, privacy-first image optimizer that runs entirely in your browser. Compress and convert images with state-of-the-art codecs — no uploads, no servers, no compromises.
 
 **[🚀 Try it live](https://ishanjalan.github.io/ImageOptimser/)**
 
@@ -9,18 +9,19 @@ A blazing-fast, privacy-first image optimizer that runs entirely in your browser
 ### 🔒 100% Private
 Your images **never leave your device**. All compression happens locally using WebAssembly — no server uploads, no data collection, complete privacy.
 
-### ⚡ Professional Codecs
-Powered by the same algorithms used by Google and Mozilla:
-- **MozJPEG** — Superior JPEG compression
-- **OxiPNG** — Optimized PNG with maximum compression  
+### ⚡ State-of-the-Art Codecs
+Powered by the latest image compression technology via [icodec](https://github.com/nicferrier/icodec):
+- **MozJPEG** — Superior JPEG compression (industry standard)
+- **OxiPNG** — Optimized PNG with maximum lossless compression  
 - **WebP** — Modern format with excellent quality/size ratio
 - **AVIF** — Next-gen format with best-in-class compression
+- **JPEG XL** — Cutting-edge format with best quality and progressive loading
 - **SVGO** — SVG optimization and minification
-- **HEIC Input** — iPhone photo support (converted to WebP/AVIF)
+- **HEIC Input** — iPhone photo support (converted to WebP/AVIF/JXL)
 
 ### 🎯 Smart Defaults
 - **Quality Presets** — Tiny (50%), Web (75%), Social (85%), High (92%), Max (98%)
-- **Format Conversion** — Convert between JPEG, PNG, WebP, AVIF, and SVG
+- **Format Conversion** — Convert between JPEG, PNG, WebP, AVIF, JPEG XL, and SVG
 - **Lossless Mode** — Preserve perfect quality when needed
 - **Strip EXIF** — Remove metadata for smaller files and privacy
 - **Resize** — Max dimension presets (1920, 1280, 800px) with aspect ratio preservation
@@ -35,7 +36,7 @@ Powered by the same algorithms used by Google and Mozilla:
 ### 🎨 Beautiful Experience
 - Side-by-side before/after comparison slider
 - Real-time compression progress
-- Dark theme optimized for focus
+- Sleek dark-only theme designed for focus
 - Responsive design for all screen sizes
 - Toast notifications for feedback
 - Keyboard shortcuts
@@ -60,7 +61,7 @@ Powered by the same algorithms used by Google and Mozilla:
 | Framework | [SvelteKit 2](https://kit.svelte.dev/) + [Svelte 5](https://svelte.dev/) (Runes) |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com/) (Lightning CSS) |
 | Build | [Vite 7](https://vitejs.dev/) |
-| Compression | [@jsquash/*](https://github.com/nicferrier/jsquash) (WASM codecs) |
+| Compression | [icodec](https://github.com/Kaciras/icodec) (WASM codecs) |
 | HEIC | [heic2any](https://github.com/nicferrier/heic2any) (libheif WASM) |
 | SVG | [SVGO](https://github.com/svg/svgo) |
 | ZIP | [JSZip](https://stuk.github.io/jszip/) + File System Access API |
@@ -88,11 +89,13 @@ Powered by the same algorithms used by Google and Mozilla:
 │         │              │           │                            │
 │         │              ▼           ▼                            │
 │         │        ┌──────────────────────┐                      │
-│         │        │     WASM Codecs      │                      │
+│         │        │   icodec WASM Codecs │                      │
 │         │        │ ┌────────┬────────┐  │                      │
 │         │        │ │MozJPEG │OxiPNG  │  │                      │
 │         │        │ ├────────┼────────┤  │                      │
 │         │        │ │ WebP   │ AVIF   │  │                      │
+│         │        │ ├────────┼────────┤  │                      │
+│         │        │ │JPEG XL │  ...   │  │                      │
 │         │        │ └────────┴────────┘  │                      │
 │         │        └──────────────────────┘                      │
 │         │                                                       │
@@ -197,18 +200,20 @@ npm run preview
 | PNG | ✅ | ✅ | OxiPNG optimization |
 | WebP | ✅ | ✅ | Lossy & lossless |
 | AVIF | ✅ | ✅ | Best compression |
+| JPEG XL | ✅ | ✅ | Best quality, progressive loading |
 | SVG | ✅ | ✅ | SVGO optimization |
 | HEIC | ✅ | ❌ | iPhone photos (converts to other formats) |
 
 ## 📊 Compression Comparison
 
-| Format | Best For | Typical Savings |
-|--------|----------|-----------------|
-| JPEG | Photos, gradients | 60-80% |
-| PNG | Screenshots, transparency | 20-50% |
-| WebP | Universal web use | 70-85% |
-| AVIF | Maximum compression | 80-90% |
-| SVG | Vector graphics, icons | 30-60% |
+| Format | Best For | Typical Savings | Browser Support |
+|--------|----------|-----------------|-----------------|
+| JPEG | Photos, gradients | 60-80% | 100% |
+| PNG | Screenshots, transparency | 20-50% | 100% |
+| WebP | Universal web use | 70-85% | 97% |
+| AVIF | Maximum compression | 80-90% | 93% |
+| JPEG XL | Best quality & progressive | 70-85% | ~25% (Safari, Chrome flag) |
+| SVG | Vector graphics, icons | 30-60% | 100% |
 
 ## 🌟 Why Squish?
 
@@ -219,6 +224,7 @@ npm run preview
 | ZIP Download | ✅ | ❌ | ✅ | ✅ |
 | Format Conversion | ✅ | ✅ | ❌ | Limited |
 | AVIF Support | ✅ | ✅ | ❌ | Limited |
+| JPEG XL Support | ✅ | ✅ | ❌ | ❌ |
 | HEIC Input | ✅ | ❌ | ❌ | Some |
 | Open Source | ✅ | ✅ | ❌ | ❌ |
 | No Upload Limits | ✅ | ✅ | ❌ | ❌ |
@@ -243,9 +249,10 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 - [Google Squoosh](https://squoosh.app/) — Inspiration for browser-based compression
 - [Mediabunny](https://mediabunny.dev/) — Inspiration for performance visibility and architecture
-- [jSquash](https://github.com/nicferrier/jsquash) — WASM codec implementations
+- [icodec](https://github.com/Kaciras/icodec) — Unified WASM codec library with bleeding-edge format support
 - [MozJPEG](https://github.com/mozilla/mozjpeg) — Mozilla's optimized JPEG encoder
 - [OxiPNG](https://github.com/shssoichiro/oxipng) — Rust-based PNG optimizer
+- [libjxl](https://github.com/libjxl/libjxl) — JPEG XL reference implementation
 - [heic2any](https://github.com/nicferrier/heic2any) — HEIC to other format conversion
 
 ---

@@ -25,7 +25,8 @@
 		{ value: 'jpeg', label: 'JPEG' },
 		{ value: 'png', label: 'PNG' },
 		{ value: 'webp', label: 'WebP' },
-		{ value: 'avif', label: 'AVIF' }
+		{ value: 'avif', label: 'AVIF' },
+		{ value: 'jxl', label: 'JXL', title: 'JPEG XL - newest format with best quality' }
 	];
 
 	// Quality presets based on common use cases

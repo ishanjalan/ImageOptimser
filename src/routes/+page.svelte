@@ -174,7 +174,7 @@
 
 		// Check for pasted URL first
 		if (text) {
-			const urlPattern = /^https?:\/\/[^\s]+\.(jpe?g|png|webp|avif|svg|gif|heic|heif)(\?[^\s]*)?$/i;
+			const urlPattern = /^https?:\/\/[^\s]+\.(jpe?g|png|webp|avif|jxl|svg|gif|heic|heif)(\?[^\s]*)?$/i;
 			if (urlPattern.test(text.trim())) {
 				e.preventDefault();
 				await fetchImageFromUrl(text.trim());
@@ -263,7 +263,7 @@
 		{
 			icon: Gauge,
 			title: 'Pro Codecs',
-			description: 'MozJPEG, OxiPNG, WebP, AVIF & SVGO'
+			description: 'MozJPEG, WebP, AVIF, JPEG XL & more'
 		}
 	];
 </script>
@@ -304,11 +304,11 @@
 					<h1 class="mb-4 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
 						<span class="gradient-text">Optimize</span> your images
 						<br class="hidden sm:block" />
-						<span class="text-surface-600 dark:text-surface-400">in seconds</span>
+						<span class="text-surface-400">in seconds</span>
 					</h1>
 					<p class="mx-auto max-w-2xl text-base sm:text-lg text-surface-500 leading-relaxed">
-						Compress JPEG, PNG, WebP, AVIF, and SVG with powerful algorithms.
-						<span class="font-medium text-surface-700 dark:text-surface-300">100% private</span>
+						Compress JPEG, PNG, WebP, AVIF, JPEG XL, and SVG with cutting-edge codecs.
+						<span class="font-medium text-surface-300">100% private</span>
 						— everything runs in your browser.
 					</p>
 
@@ -325,7 +325,7 @@
 									<feature.icon class="h-6 w-6" />
 								</div>
 								<div>
-									<h3 class="text-base font-semibold text-surface-900 dark:text-surface-100">
+									<h3 class="text-base font-semibold text-surface-100">
 										{feature.title}
 									</h3>
 									<p class="text-sm text-surface-500 mt-0.5">{feature.description}</p>
@@ -358,7 +358,7 @@
 						<div class="flex items-center gap-3">
 							<Sparkles class="h-6 w-6 text-accent-start" aria-hidden="true" />
 							<span class="text-base text-surface-500">
-								<span class="font-semibold text-surface-900 dark:text-surface-100 text-lg"
+								<span class="font-semibold text-surface-100 text-lg"
 									><AnimatedNumber value={completedCount} format={(n) => Math.round(n).toString()} /></span
 								>
 								of {images.items.length} optimized
@@ -384,7 +384,7 @@
 						{#if processingCount > 0}
 							<button
 								onclick={handleCancelProcessing}
-								class="flex items-center gap-2 rounded-xl bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-600 transition-all hover:bg-amber-500/20 dark:text-amber-400"
+								class="flex items-center gap-2 rounded-xl bg-amber-500/10 px-5 py-2.5 text-sm font-medium text-amber-400 transition-all hover:bg-amber-500/20"
 							>
 								<XCircle class="h-5 w-5" aria-hidden="true" />
 								<span class="hidden sm:inline">Cancel</span>
@@ -418,7 +418,7 @@
 						{/if}
 						<button
 							onclick={() => showClearConfirm = true}
-							class="flex items-center gap-2 rounded-xl bg-surface-100 px-5 py-2.5 text-sm font-medium text-surface-600 transition-all hover:bg-red-50 hover:text-red-600 dark:bg-surface-800 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+							class="flex items-center gap-2 rounded-xl bg-surface-800 px-5 py-2.5 text-sm font-medium text-surface-400 transition-all hover:bg-red-900/20 hover:text-red-400"
 							aria-label="Clear all images (press Escape)"
 						>
 							<Trash2 class="h-5 w-5" aria-hidden="true" />

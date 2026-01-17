@@ -689,6 +689,7 @@ export function getOutputExtension(format: OutputFormat): string {
 		png: '.png',
 		webp: '.webp',
 		avif: '.avif',
+		jxl: '.jxl',
 		svg: '.svg'
 	};
 	return map[format];

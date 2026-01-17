@@ -35,15 +35,15 @@
 
 	const variantStyles = {
 		danger: {
-			icon: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+			icon: 'bg-red-900/30 text-red-400',
 			button: 'bg-red-500 hover:bg-red-600 text-white'
 		},
 		warning: {
-			icon: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+			icon: 'bg-amber-900/30 text-amber-400',
 			button: 'bg-amber-500 hover:bg-amber-600 text-white'
 		},
 		info: {
-			icon: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+			icon: 'bg-blue-900/30 text-blue-400',
 			button: 'bg-blue-500 hover:bg-blue-600 text-white'
 		}
 	};
@@ -70,13 +70,13 @@
 
 		<!-- Modal -->
 		<div
-			class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-surface-900"
+			class="relative w-full max-w-md rounded-2xl bg-surface-900 p-6 shadow-2xl"
 			transition:scale={{ duration: 200, start: 0.95 }}
 		>
 			<!-- Close button -->
 			<button
 				onclick={oncancel}
-				class="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-colors hover:bg-surface-100 hover:text-surface-600 dark:hover:bg-surface-800"
+				class="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-colors hover:bg-surface-800"
 				aria-label="Close"
 			>
 				<X class="h-5 w-5" />
@@ -90,7 +90,7 @@
 			</div>
 
 			<!-- Content -->
-			<h3 id="modal-title" class="mb-2 text-center text-lg font-semibold text-surface-900 dark:text-surface-100">
+			<h3 id="modal-title" class="mb-2 text-center text-lg font-semibold text-surface-100">
 				{title}
 			</h3>
 			<p class="mb-6 text-center text-sm text-surface-500">
@@ -101,7 +101,7 @@
 			<div class="flex gap-3">
 				<button
 					onclick={oncancel}
-					class="flex-1 rounded-xl bg-surface-100 px-4 py-2.5 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700"
+					class="flex-1 rounded-xl bg-surface-800 px-4 py-2.5 text-sm font-medium text-surface-300 transition-colors hover:bg-surface-700"
 				>
 					{cancelText}
 				</button>

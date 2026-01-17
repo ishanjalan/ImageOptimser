@@ -1,17 +1,12 @@
 <script lang="ts">
 	import { base } from '$app/paths';
-	import { Github, Zap, Command, Keyboard, WifiOff, Download, X, Sun, Moon } from 'lucide-svelte';
+	import { Github, Zap, Command, Keyboard, WifiOff, Download, X } from 'lucide-svelte';
 	import { scale, fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import { images } from '$lib/stores/images.svelte';
 	import { toast } from './Toast.svelte';
 
 	const FIRST_VISIT_KEY = 'squish-first-visit-shown';
-	const THEME_KEY = 'squish-theme';
-
-	type Theme = 'light' | 'dark' | 'system';
-	let currentTheme = $state<Theme>('system');
-	let isDarkMode = $state(true); // Actual computed state
 
 	function handleLogoClick() {
 		const hadImages = images.items.length > 0;
@@ -80,61 +75,9 @@
 		showInstallPrompt = false;
 	}
 
-	function applyTheme(theme: Theme) {
-		const html = document.documentElement;
-		let dark: boolean;
-
-		if (theme === 'system') {
-			dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-		} else {
-			dark = theme === 'dark';
-		}
-
-		isDarkMode = dark;
-		html.classList.toggle('dark', dark);
-		
-		// Update meta theme-color for mobile browsers
-		const metaTheme = document.querySelector('meta[name="theme-color"]');
-		if (metaTheme) {
-			metaTheme.setAttribute('content', dark ? '#09090b' : '#f4f4f5');
-		}
-	}
-
-	function toggleTheme() {
-		// Cycle: system -> light -> dark -> system
-		const next: Record<Theme, Theme> = {
-			'system': 'light',
-			'light': 'dark',
-			'dark': 'system'
-		};
-		currentTheme = next[currentTheme];
-		
-		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem(THEME_KEY, currentTheme);
-		}
-		
-		applyTheme(currentTheme);
-	}
-
 	onMount(() => {
 		// Set initial online status
 		updateOnlineStatus();
-
-		// Initialize theme
-		if (typeof localStorage !== 'undefined') {
-			const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
-			currentTheme = savedTheme || 'system';
-		}
-		applyTheme(currentTheme);
-
-		// Listen for system theme changes
-		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		const handleSystemThemeChange = () => {
-			if (currentTheme === 'system') {
-				applyTheme('system');
-			}
-		};
-		mediaQuery.addEventListener('change', handleSystemThemeChange);
 
 		// Check if first visit
 		if (typeof localStorage !== 'undefined') {
@@ -158,7 +101,6 @@
 			window.removeEventListener('online', updateOnlineStatus);
 			window.removeEventListener('offline', updateOnlineStatus);
 			window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-			mediaQuery.removeEventListener('change', handleSystemThemeChange);
 		};
 	});
 </script>
@@ -208,25 +150,6 @@
 						<span class="text-xs font-medium hidden sm:inline">Install App</span>
 					</button>
 				{/if}
-
-				<!-- Theme toggle -->
-				<button
-					onclick={toggleTheme}
-					class="flex h-10 w-10 items-center justify-center rounded-xl text-surface-400 transition-all hover:bg-surface-800 hover:text-surface-100"
-					aria-label="Toggle theme (current: {currentTheme})"
-					title="Theme: {currentTheme === 'system' ? 'System' : currentTheme === 'dark' ? 'Dark' : 'Light'}"
-				>
-					{#if currentTheme === 'system'}
-						<div class="relative">
-							<Sun class="h-3 w-3 absolute -top-0.5 -left-0.5 opacity-60" />
-							<Moon class="h-3 w-3 absolute -bottom-0.5 -right-0.5 opacity-60" />
-						</div>
-					{:else if isDarkMode}
-						<Moon class="h-5 w-5" />
-					{:else}
-						<Sun class="h-5 w-5" />
-					{/if}
-				</button>
 
 				<!-- Keyboard shortcuts -->
 				<div class="relative" data-shortcuts-popover>

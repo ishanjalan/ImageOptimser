@@ -15,13 +15,14 @@
 	let isLoadingUrl = $state(false);
 	let urlInputRef: HTMLInputElement;
 
-	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.svg,.heic,.heif';
+	const acceptedFormats = '.jpg,.jpeg,.png,.webp,.avif,.jxl,.svg,.heic,.heif';
 	const validTypes = [
 		'image/jpeg',
 		'image/jpg',
 		'image/png',
 		'image/webp',
 		'image/avif',
+		'image/jxl',
 		'image/svg+xml',
 		'image/heic',
 		'image/heif'
@@ -33,6 +34,7 @@
 		{ name: 'PNG', color: 'from-blue-500 to-indigo-500' },
 		{ name: 'WebP', color: 'from-green-500 to-emerald-500' },
 		{ name: 'AVIF', color: 'from-purple-500 to-pink-500' },
+		{ name: 'JXL', color: 'from-amber-500 to-orange-500' },
 		{ name: 'SVG', color: 'from-cyan-500 to-blue-500' },
 		{ name: 'HEIC', color: 'from-pink-500 to-rose-500' }
 	];
@@ -210,9 +212,9 @@
 		<div
 			class="group flex items-center justify-center gap-4 rounded-2xl border-2 border-dashed min-h-[56px] py-5 sm:py-6 px-6 transition-all duration-300 cursor-pointer {isDragging
 				? 'border-accent-start bg-accent-start/5'
-				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700'}"
+				: 'border-surface-700 hover:border-accent-start/50'}"
 		>
-			<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-100 dark:bg-surface-800 transition-colors group-hover:bg-accent-start/10">
+			<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-800 transition-colors group-hover:bg-accent-start/10">
 				{#if isDragging}
 					<FileImage class="h-6 w-6 text-accent-start animate-pulse" />
 				{:else}
@@ -232,11 +234,11 @@
 		<div
 			class="group relative overflow-hidden rounded-2xl border-2 border-dashed py-12 sm:py-16 transition-all duration-300 cursor-pointer {isDragging
 				? 'border-accent-start bg-accent-start/5 scale-[1.01]'
-				: 'border-surface-300 hover:border-accent-start/50 dark:border-surface-700 dark:hover:border-accent-start/50'}"
+				: 'border-surface-700 hover:border-accent-start/50'}"
 		>
 			<!-- Background pattern -->
 			<div
-				class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+				class="absolute inset-0 opacity-[0.05]"
 				style="background-image: url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;);"
 			></div>
 
@@ -245,7 +247,7 @@
 				<div
 					class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 {isDragging
 						? 'bg-accent-start/20 scale-110 rotate-3'
-						: 'bg-surface-100 group-hover:bg-accent-start/10 dark:bg-surface-800 group-hover:scale-105'}"
+						: 'bg-surface-800 group-hover:bg-accent-start/10 group-hover:scale-105'}"
 				>
 					{#if isDragging}
 						<FileImage class="h-8 w-8 text-accent-start animate-pulse" />
@@ -261,7 +263,7 @@
 					<p class="text-xl font-semibold text-accent-start">Release to upload</p>
 					<p class="mt-2 text-base text-accent-start/70">Your images are ready to be optimized</p>
 				{:else}
-					<p class="text-xl font-semibold text-surface-700 dark:text-surface-300">Drop images here</p>
+					<p class="text-xl font-semibold text-surface-300">Drop images here</p>
 					<p class="mt-2 text-base text-surface-500">
 						or <span class="font-medium text-accent-start underline-offset-2 hover:underline">click to browse</span>
 					</p>

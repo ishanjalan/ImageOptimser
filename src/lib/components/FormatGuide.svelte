@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { X, Image, Layers, Zap, Sparkles, Globe } from 'lucide-svelte';
+	import { X, Image, Layers, Zap, Sparkles, Globe, Star } from 'lucide-svelte';
 	import { scale, fade } from 'svelte/transition';
 	import { focusTrap } from '$lib/utils/focus-trap';
 
@@ -40,7 +40,16 @@
 			bestFor: 'Maximum compression',
 			pros: ['50% smaller than JPEG', 'Excellent quality', 'HDR support'],
 			cons: ['Slower encoding', 'Limited browser support'],
-			support: '92%'
+			support: '93%'
+		},
+		{
+			name: 'JPEG XL',
+			icon: Star,
+			color: 'from-amber-500 to-orange-500',
+			bestFor: 'Best quality & compression',
+			pros: ['Best quality at any size', 'Lossless JPEG recompression', 'Progressive loading'],
+			cons: ['Limited browser support (Safari, Chrome flag)'],
+			support: '~25%'
 		}
 	];
 
@@ -78,13 +87,13 @@
 
 		<!-- Modal -->
 		<div
-			class="relative w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl dark:bg-surface-900"
+			class="relative w-full max-w-2xl rounded-2xl bg-surface-900 p-6 shadow-2xl"
 			transition:scale={{ duration: 200, start: 0.95 }}
 		>
 			<!-- Close button -->
 			<button
 				onclick={onclose}
-				class="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-colors hover:bg-surface-100 hover:text-surface-600 dark:hover:bg-surface-800"
+				class="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-colors hover:bg-surface-800"
 				aria-label="Close"
 			>
 				<X class="h-5 w-5" />
@@ -92,7 +101,7 @@
 
 			<!-- Header -->
 			<div class="mb-6">
-				<h2 id="format-guide-title" class="text-xl font-semibold text-surface-900 dark:text-surface-100">
+				<h2 id="format-guide-title" class="text-xl font-semibold text-surface-100">
 					Format Guide
 				</h2>
 				<p class="mt-1 text-sm text-surface-500">
@@ -103,13 +112,13 @@
 			<!-- Format Grid -->
 			<div class="grid gap-4 sm:grid-cols-2">
 				{#each formats as format}
-					<div class="rounded-xl border border-surface-200 p-4 dark:border-surface-700">
+					<div class="rounded-xl border border-surface-700 p-4">
 						<div class="flex items-center gap-3 mb-3">
 							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br {format.color}">
 								<format.icon class="h-5 w-5 text-white" />
 							</div>
 							<div>
-								<h3 class="font-semibold text-surface-900 dark:text-surface-100">{format.name}</h3>
+								<h3 class="font-semibold text-surface-100">{format.name}</h3>
 								<div class="flex items-center gap-1 text-xs text-surface-500">
 									<Globe class="h-3 w-3" />
 									<span>{format.support} browser support</span>
@@ -122,7 +131,7 @@
 						<div class="space-y-2 text-xs">
 							<div>
 								<span class="text-green-500 font-medium">Pros:</span>
-								<ul class="mt-0.5 text-surface-600 dark:text-surface-400">
+								<ul class="mt-0.5 text-surface-400">
 									{#each format.pros as pro}
 										<li class="flex items-start gap-1">
 											<span class="text-green-500">+</span>
@@ -133,7 +142,7 @@
 							</div>
 							<div>
 								<span class="text-amber-500 font-medium">Cons:</span>
-								<ul class="mt-0.5 text-surface-600 dark:text-surface-400">
+								<ul class="mt-0.5 text-surface-400">
 									{#each format.cons as con}
 										<li class="flex items-start gap-1">
 											<span class="text-amber-500">-</span>
@@ -149,10 +158,11 @@
 
 			<!-- Recommendation -->
 			<div class="mt-6 rounded-lg bg-accent-start/10 p-4">
-				<p class="text-sm text-surface-700 dark:text-surface-300">
+				<p class="text-sm text-surface-300">
 					<strong class="text-accent-start">Recommendation:</strong> Use <strong>WebP</strong> for 
 					most web images — it offers the best balance of quality, file size, and compatibility. 
-					Use <strong>AVIF</strong> when maximum compression is needed and you can provide WebP fallbacks.
+					Use <strong>AVIF</strong> for maximum compression, or <strong>JPEG XL</strong> for best quality 
+					when targeting Safari or progressive enhancement.
 				</p>
 			</div>
 		</div>

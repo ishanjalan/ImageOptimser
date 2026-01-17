@@ -6,7 +6,7 @@ export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
 	optimizeDeps: {
 		// Exclude WASM packages from pre-bundling (they need special handling)
-		exclude: ['@jsquash/jpeg', '@jsquash/png', '@jsquash/oxipng', '@jsquash/webp', '@jsquash/avif']
+		exclude: ['icodec']
 	},
 	build: {
 		target: 'esnext'

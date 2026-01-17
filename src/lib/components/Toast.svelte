@@ -92,7 +92,7 @@
 				role="alert"
 			>
 				<svelte:component this={icons[t.type]} class="h-5 w-5 flex-shrink-0" />
-				<p class="flex-1 text-sm font-medium text-surface-900 dark:text-surface-100">
+				<p class="flex-1 text-sm font-medium text-surface-100">
 					{t.message}
 				</p>
 				{#if t.action}
@@ -105,7 +105,7 @@
 				{/if}
 				<button
 					onclick={() => removeToast(t.id)}
-					class="flex-shrink-0 rounded-lg p-1 text-surface-400 transition-colors hover:bg-surface-200 hover:text-surface-600 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+					class="flex-shrink-0 rounded-lg p-1 text-surface-400 transition-colors hover:bg-surface-700 hover:text-surface-300"
 					aria-label="Dismiss notification"
 				>
 					<X class="h-4 w-4" />

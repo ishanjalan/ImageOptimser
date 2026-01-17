@@ -5,7 +5,7 @@
 	--font-sans: 'Outfit', system-ui, sans-serif;
 	--font-mono: 'JetBrains Mono', monospace;
 
-	/* Custom colors */
+	/* Custom colors - Dark theme only */
 	--color-surface-50: #fafafa;
 	--color-surface-100: #f4f4f5;
 	--color-surface-200: #e4e4e7;
@@ -23,7 +23,7 @@
 	--color-accent-end: #06b6d4;
 }
 
-/* Base styles */
+/* Base styles - Dark mode only */
 html {
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
@@ -31,10 +31,6 @@ html {
 }
 
 body {
-	@apply bg-surface-50 text-surface-900 transition-colors duration-300;
-}
-
-:root.dark body {
 	@apply bg-surface-950 text-surface-100;
 }
 
@@ -106,13 +102,9 @@ textarea:focus-visible {
 	pointer-events: none;
 }
 
-/* Glassmorphism */
+/* Glassmorphism - Dark mode only */
 .glass {
-	@apply bg-white/70 backdrop-blur-xl border border-white/20;
-}
-
-:root.dark .glass {
-	@apply bg-surface-900/70 border-surface-700/30;
+	@apply bg-surface-900/70 backdrop-blur-xl border border-surface-700/30;
 }
 
 /* Body scroll lock for modals */
@@ -133,18 +125,10 @@ body.modal-open {
 }
 
 ::-webkit-scrollbar-thumb {
-	@apply bg-surface-300 rounded-full;
-}
-
-:root.dark ::-webkit-scrollbar-thumb {
-	@apply bg-surface-700;
+	@apply bg-surface-700 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	@apply bg-surface-400;
-}
-
-:root.dark ::-webkit-scrollbar-thumb:hover {
 	@apply bg-surface-600;
 }
 

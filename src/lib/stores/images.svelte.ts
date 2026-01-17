@@ -1,5 +1,5 @@
-export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg' | 'heic';
-export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'svg'; // HEIC is input-only
+export type ImageFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'jxl' | 'svg' | 'heic';
+export type OutputFormat = 'jpeg' | 'png' | 'webp' | 'avif' | 'jxl' | 'svg'; // HEIC is input-only
 export type ImageStatus = 'pending' | 'processing' | 'completed' | 'error';
 
 export interface ScaledOutput {
@@ -150,6 +150,7 @@ function createImagesStore() {
 			'image/png': 'png',
 			'image/webp': 'webp',
 			'image/avif': 'avif',
+			'image/jxl': 'jxl',
 			'image/svg+xml': 'svg',
 			'image/heic': 'heic',
 			'image/heif': 'heic'
@@ -194,6 +195,7 @@ function createImagesStore() {
 				'image/png',
 				'image/webp',
 				'image/avif',
+				'image/jxl',
 				'image/svg+xml',
 				'image/heic',
 				'image/heif'

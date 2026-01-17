@@ -157,7 +157,7 @@
 	<!-- Selection checkbox -->
 	<button
 		onclick={handleSelectionToggle}
-		class="absolute -top-2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-lg transition-all {isSelected ? 'bg-accent-start text-white opacity-100' : 'bg-surface-200 text-surface-500 dark:bg-surface-700'} {showSelectionMode || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+		class="absolute -top-2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-lg transition-all {isSelected ? 'bg-accent-start text-white opacity-100' : 'bg-surface-700 text-surface-500'} {showSelectionMode || isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
 		aria-label={isSelected ? 'Deselect image' : 'Select image'}
 	>
 		{#if isSelected}
@@ -170,7 +170,7 @@
 	<!-- Remove button -->
 	<button
 		onclick={handleRemove}
-		class="absolute -top-2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-surface-200 text-surface-500 opacity-0 shadow-lg transition-all hover:bg-red-500 hover:text-white group-hover:opacity-100 dark:bg-surface-700"
+		class="absolute -top-2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-surface-700 text-surface-500 opacity-0 shadow-lg transition-all hover:bg-red-500 hover:text-white group-hover:opacity-100"
 		aria-label="Remove image"
 	>
 		<X class="h-4 w-4" />
@@ -184,7 +184,7 @@
 		onkeydown={(e) => e.key === 'Enter' && ((item.status === 'completed' && item.compressedUrl) ? showCompare = true : (canDisplayOriginal ? showPreview = true : null))}
 		draggable={canDrag ? true : false}
 		ondragstart={handleDragStart}
-		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-100 dark:bg-surface-800 cursor-pointer focus:outline-none {canDrag ? 'cursor-grab active:cursor-grabbing' : ''}"
+		class="relative w-full aspect-[4/3] overflow-hidden rounded-t-2xl bg-surface-800 cursor-pointer focus:outline-none {canDrag ? 'cursor-grab active:cursor-grabbing' : ''}"
 		aria-label={canDrag ? 'Drag to save or click to compare' : 'Compare or preview image'}
 		title={canDrag ? 'Drag to desktop to save' : undefined}
 	>
@@ -318,7 +318,7 @@
 	<div class="p-4">
 		<!-- Filename + Size -->
 		<div class="flex items-center justify-between gap-3 mb-1">
-			<p class="truncate text-sm font-medium text-surface-900 dark:text-surface-100" title={item.name}>
+			<p class="truncate text-sm font-medium text-surface-100" title={item.name}>
 				{item.name}
 			</p>
 			{#if item.status === 'completed' && item.compressedSize}
@@ -344,7 +344,7 @@
 			<p class="text-sm text-surface-500">Waiting...</p>
 		{:else if item.status === 'processing'}
 			<div class="flex items-center gap-3">
-				<div class="flex-1 h-2 overflow-hidden rounded-full bg-surface-200 dark:bg-surface-700">
+				<div class="flex-1 h-2 overflow-hidden rounded-full bg-surface-700">
 					<div
 						class="h-full rounded-full bg-gradient-to-r from-accent-start to-accent-end transition-all duration-300"
 						style="width: {item.progress}%"
@@ -363,14 +363,14 @@
 					</div>
 					<button
 						onclick={handleRetry}
-						class="flex items-center gap-1.5 rounded-lg bg-red-100 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400"
+						class="flex items-center gap-1.5 rounded-lg bg-red-900/30 px-3 py-1.5 text-sm font-medium text-red-400 hover:bg-red-900/50"
 					>
 						<RotateCcw class="h-4 w-4" />
 						Retry
 					</button>
 				</div>
 				{#if item.error}
-					<p class="text-xs text-red-400 dark:text-red-500 leading-relaxed">
+					<p class="text-xs text-red-500 leading-relaxed">
 						{item.error}
 					</p>
 				{/if}
@@ -401,17 +401,17 @@
 								aria-label="Close menu"
 							></button>
 							<div
-								class="absolute left-0 bottom-full z-50 mb-2 min-w-[120px] overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-black/10 dark:bg-surface-800 dark:ring-white/10"
+								class="absolute left-0 bottom-full z-50 mb-2 min-w-[120px] overflow-hidden rounded-xl bg-surface-800 shadow-xl ring-1 ring-white/10"
 								in:scale={{ duration: 150, start: 0.95 }}
 								out:fade={{ duration: 100 }}
 							>
 								{#each outputOptions as format}
 									<button
 										onclick={() => handleFormatChange(format.value)}
-										class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-100 dark:hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-50 dark:bg-surface-700/50' : ''}"
+										class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition-colors hover:bg-surface-700 {item.outputFormat === format.value ? 'bg-surface-700/50' : ''}"
 									>
 										<span class="h-2.5 w-2.5 rounded-full bg-gradient-to-r {format.color}"></span>
-										<span class="font-medium text-surface-700 dark:text-surface-300">{format.label}</span>
+										<span class="font-medium text-surface-300">{format.label}</span>
 									</button>
 								{/each}
 							</div>
@@ -423,7 +423,7 @@
 				<div class="flex items-center gap-1.5">
 					<button
 						onclick={() => showCompare = true}
-						class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+						class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-700 hover:text-surface-300"
 						aria-label="Compare"
 						title="Compare before/after"
 					>
@@ -432,7 +432,7 @@
 					{#if canCopyToClipboard}
 						<button
 							onclick={handleCopy}
-							class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-100 hover:text-surface-700 dark:hover:bg-surface-700 dark:hover:text-surface-300"
+							class="flex h-8 w-8 items-center justify-center rounded-lg text-surface-400 transition-all hover:bg-surface-700 hover:text-surface-300"
 							aria-label="Copy to clipboard"
 							title="Copy to clipboard"
 						>
@@ -454,7 +454,7 @@
 			{#if showWebpSuggestion}
 				<button
 					onclick={() => handleFormatChange('webp')}
-					class="mt-3 flex w-full items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+					class="mt-3 flex w-full items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-400 transition-colors hover:bg-amber-500/20"
 				>
 					<AlertCircle class="h-4 w-4 flex-shrink-0" />
 					<span>
@@ -472,7 +472,7 @@
 			
 			<!-- Target size warning -->
 			{#if item.targetSizeWarning}
-				<div class="mt-3 flex w-full items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-600 dark:text-amber-400">
+				<div class="mt-3 flex w-full items-center gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-left text-xs text-amber-400">
 					<AlertCircle class="h-4 w-4 flex-shrink-0" />
 					<span>{item.targetSizeWarning}</span>
 				</div>
